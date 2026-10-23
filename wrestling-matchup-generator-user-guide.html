@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wrestling Matchup Generator - User Guide</title>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --surface: #ffffff;
+      --border: #d8d8d8;
+      --text: #1f2937;
+      --muted: #4b5563;
+      --accent: #b11f4b;
+      --accent-soft: #f9e9ee;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    h1, h2, h3 { line-height: 1.25; margin-top: 0; }
+    h1 { font-size: 2rem; margin-bottom: 10px; }
+    h2 { font-size: 1.4rem; margin-bottom: 10px; border-bottom: 2px solid var(--accent-soft); padding-bottom: 8px; }
+    h3 { font-size: 1.08rem; margin-bottom: 8px; }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    img {
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: block;
+      margin: 10px 0 14px;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 0.96rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f3f4f6; }
+    .faq-item { margin-bottom: 14px; }
+    code {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 1px 5px;
+      font-family: Consolas, "Courier New", Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Wrestling Matchup Generator</h1>
+      <p class="muted"><strong>Complete User Guide</strong> for coaches and event staff (no technical background required).</p>
+      <div class="callout">
+        This utility is a coach-assistance tool. It helps you build practical matchups quickly, but coaches should always review and approve final pairings.
+      </div>
+    </div>
+
+    <div class="card toc">
+      <h2>Table of Contents</h2>
+      <ol>
+        <li><a href="#overview">What this utility does</a></li>
+        <li><a href="#quick-start">Quick start (5-minute setup)</a></li>
+        <li><a href="#tab1">Tab 1: Event Setup</a></li>
+        <li><a href="#tab2">Tab 2: Import or Add Wrestlers</a></li>
+        <li><a href="#tab3">Tab 3: Wrestler Roster</a></li>
+        <li><a href="#tab4">Tab 4: Matching Settings</a></li>
+        <li><a href="#tab5">Tab 5: Matchups</a></li>
+        <li><a href="#tab6">Tab 6: Export Final Matchups page</a></li>
+        <li><a href="#manual-adjustments">Manual adjustment motions (step-by-step)</a></li>
+        <li><a href="#flags">Understanding review flags</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ol>
+    </div>
+
+    <div class="card" id="overview">
+      <h2>1) What this utility does</h2>
+      <p>This app helps you:</p>
+      <ul>
+        <li>Import many teams at once from CSV/TXT files.</li>
+        <li>Manually add or edit wrestlers quickly at the event table.</li>
+        <li>Generate one or more matchup rounds using weight-first priorities.</li>
+        <li>Review edge cases (same-school, large weight gap, rematch, etc.).</li>
+        <li>Make manual changes without losing control of assignments.</li>
+        <li>Export a final matchup report (CSV and printable PDF).</li>
+      </ul>
+      <p class="muted">The app runs locally in your browser and does not require internet access once opened.</p>
+    </div>
+
+    <div class="card" id="quick-start">
+      <h2>2) Quick start (5-minute setup)</h2>
+      <ol>
+        <li>Open <code>wrestling-matchup-generator.html</code>.</li>
+        <li>Enter event name/date/location.</li>
+        <li>Import rosters (one or multiple files), or add wrestlers manually.</li>
+        <li>Review roster and fix any missing data.</li>
+        <li>Set matching preferences (weight limits, rounds, school mode).</li>
+        <li>Generate matchups, review flags, and make manual adjustments if needed.</li>
+        <li>Export final results on the last tab.</li>
+      </ol>
+    </div>
+
+    <div class="card" id="tab1">
+      <h2>3) Tab 1: Event Setup</h2>
+      <img src="wmg-01-setup.png" alt="Event Setup tab screenshot">
+      <p>Use this page to define basic event details and confirm experience-level definitions:</p>
+      <ul>
+        <li><strong>Event name</strong> (optional)</li>
+        <li><strong>Event date</strong> (optional)</li>
+        <li><strong>Event location</strong> (optional)</li>
+      </ul>
+      <h3>Experience levels used throughout the app</h3>
+      <ul>
+        <li><strong>Beginner</strong>: New to the sport, typically year 1, introductory skills.</li>
+        <li><strong>Intermediate</strong>: 1+ years of experience, progressing skills.</li>
+        <li><strong>Advanced</strong>: 2+ years of experience, advanced skills.</li>
+      </ul>
+    </div>
+
+    <div class="card" id="tab2">
+      <h2>4) Tab 2: Import or Add Wrestlers</h2>
+      <img src="wmg-02-import.png" alt="Import and manual entry screenshot">
+      <h3>Importing files (single or many at once)</h3>
+      <ol>
+        <li>Click the file selector and choose one or more <code>.csv</code> or <code>.txt</code> files.</li>
+        <li>Choose how school/team should be assigned:
+          <ul>
+            <li>Use school column from file</li>
+            <li>Use filename as team name</li>
+            <li>Force Team A/B/C/D</li>
+            <li>Force custom team name</li>
+          </ul>
+        </li>
+        <li>Review import preview and validation messages.</li>
+        <li>Set duplicate handling:
+          <ul>
+            <li>Skip duplicates</li>
+            <li>Replace existing</li>
+            <li>Import separately</li>
+          </ul>
+        </li>
+        <li>Click <strong>Import Valid Rows</strong>.</li>
+      </ol>
+
+      <h3>Manual add motion</h3>
+      <ol>
+        <li>Enter first name, last name, weight, grade, experience, school, and desired # matches.</li>
+        <li>Click <strong>Add Wrestler</strong>.</li>
+        <li>If any required field is missing or invalid, an inline error appears directly below the buttons.</li>
+      </ol>
+    </div>
+
+    <div class="card" id="tab3">
+      <h2>5) Tab 3: Wrestler Roster</h2>
+      <img src="wmg-03-roster.png" alt="Roster table screenshot">
+      <p>This page is your master list of wrestlers.</p>
+      <ul>
+        <li>Sort by any major field.</li>
+        <li>Filter by weight range, grade, experience, school, name, and matched/unmatched state.</li>
+        <li>Update <strong>Desired #</strong> directly in the table.</li>
+        <li>Delete a roster row with the row-level <strong>Delete</strong> button.</li>
+      </ul>
+      <p class="muted">Tip: Keep roster data clean here before generating. It reduces manual edits later.</p>
+    </div>
+
+    <div class="card" id="tab4">
+      <h2>6) Tab 4: Matching Settings</h2>
+      <img src="wmg-04-settings.png" alt="Matching settings screenshot">
+      <h3>What each setting means</h3>
+      <table>
+        <thead><tr><th>Setting</th><th>How to use it</th></tr></thead>
+        <tbody>
+          <tr><td>Preferred max weight difference (lbs)</td><td>Your normal target for close weight pairings.</td></tr>
+          <tr><td>Absolute max weight difference (lbs)</td><td>Hard cap unless exceptions are enabled.</td></tr>
+          <tr><td>Preferred max difference (%)</td><td>Weight gap relative to lighter wrestler.</td></tr>
+          <tr><td>Rounds to generate</td><td>How many rounds to create now.</td></tr>
+          <tr><td>Allow exceptions</td><td>Allows pairings above absolute max.</td></tr>
+          <tr><td>Allow same-school</td><td>Allows same-school pairings when needed.</td></tr>
+          <tr><td>School-affiliation matching mode</td><td>Prefer different schools, enforce Team A vs Team B, or ignore school.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" id="tab5">
+      <h2>7) Tab 5: Matchups</h2>
+      <img src="wmg-05-matchups.png" alt="Matchups page screenshot">
+      <p>This page is where you generate, review, and adjust pairings.</p>
+      <h3>Core actions</h3>
+      <ul>
+        <li><strong>Generate All Rounds</strong></li>
+        <li><strong>Regenerate Selected Round</strong></li>
+        <li><strong>Regenerate Unmatched Only</strong></li>
+        <li><strong>Lock / Unlock</strong> an individual matchup</li>
+        <li><strong>Undo Last Adjustment</strong></li>
+      </ul>
+      <h3>Matchup table fields</h3>
+      <ul>
+        <li>Round, Bout, both wrestler profiles, weight difference, grade difference</li>
+        <li><strong>Matchup Effectiveness</strong> (renamed for neutral coach-facing wording)</li>
+        <li>Review flags and coach notes</li>
+      </ul>
+    </div>
+
+    <div class="card" id="manual-adjustments">
+      <h2>8) Manual adjustment motions (step-by-step)</h2>
+      <h3>Motion A: Create Manual Matchup</h3>
+      <ol>
+        <li>Select a round.</li>
+        <li>Select Wrestler 1 and Wrestler 2 from dropdowns (full roster).</li>
+        <li>Use the inline profile previews to confirm:
+          <strong>Name, Grade, Weight, Experience, School</strong>.</li>
+        <li>Click <strong>Create Manual Matchup</strong>.</li>
+      </ol>
+
+      <h3>Motion B: Replace One Side of Matchup</h3>
+      <ol>
+        <li>Select a round and a matchup.</li>
+        <li>Choose whether you are replacing Wrestler 1 or Wrestler 2.</li>
+        <li>Read the inline preview of that selected side (current wrestler details).</li>
+        <li>Select replacement wrestler (matched or unmatched) from dropdown that shows:
+          <strong>Name | Weight | Grade | Experience | School | Matched/Unmatched</strong>.</li>
+        <li>Click <strong>Replace Wrestler</strong>.</li>
+      </ol>
+
+      <h3>Motion C: Move one side to unmatched</h3>
+      <ol>
+        <li>Find a matchup row.</li>
+        <li>Click <strong>Move W1 unmatched</strong> or <strong>Move W2 unmatched</strong>.</li>
+        <li>Recheck the unmatched section for alternatives.</li>
+      </ol>
+    </div>
+
+    <div class="card" id="tab6">
+      <h2>9) Tab 6: Export Final Matchups page</h2>
+      <img src="wmg-06-export.png" alt="Export page screenshot">
+      <h3>CSV export</h3>
+      <p>Choose an export scope and click <strong>Export CSV</strong>.</p>
+      <ul>
+        <li>All matchup results</li>
+        <li>Current selected round</li>
+        <li>Filtered results</li>
+        <li>Unmatched list</li>
+        <li>Complete roster</li>
+      </ul>
+
+      <h3>PDF export</h3>
+      <p>Click <strong>Save / Print as PDF</strong>. The print view includes:</p>
+      <ul>
+        <li>Event metadata</li>
+        <li>Schools represented</li>
+        <li>Matching settings</li>
+        <li>Round matchup tables</li>
+        <li>Unmatched wrestler tables</li>
+      </ul>
+    </div>
+
+    <div class="card" id="flags">
+      <h2>10) Understanding review flags</h2>
+      <table>
+        <thead><tr><th>Flag</th><th>Meaning</th><th>Typical coach action</th></tr></thead>
+        <tbody>
+          <tr><td>Same-school</td><td>Both wrestlers are from same school.</td><td>Keep only if needed for mat time or roster balance.</td></tr>
+          <tr><td>Weight over preferred</td><td>Above your preferred threshold.</td><td>Review for better alternative if available.</td></tr>
+          <tr><td>Weight over absolute</td><td>Above your absolute threshold.</td><td>Generally rework unless intentional exception.</td></tr>
+          <tr><td>Beginner vs Advanced</td><td>Largest experience gap pairing.</td><td>Careful review before approval.</td></tr>
+          <tr><td>Grade gap &gt; 2</td><td>Large grade separation.</td><td>Review context and alternatives.</td></tr>
+          <tr><td>Rematch</td><td>Prior opponent repeated in another round.</td><td>Accept only when unavoidable.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" id="faq">
+      <h2>11) FAQ</h2>
+
+      <div class="faq-item">
+        <h3>Q1) Can I import many schools at once?</h3>
+        <p><strong>Yes.</strong> Select multiple files in one import operation, then use school assignment mode (filename, file column, Team A/B/C/D, or custom).</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q2) What if import has errors?</h3>
+        <p>The preview shows row-level issues. Valid rows can still be imported while invalid rows are skipped.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q3) What does Lock do?</h3>
+        <p>Lock keeps that matchup when you regenerate a selected round, so the app only rematches around it.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q4) Why is a wrestler unmatched?</h3>
+        <p>Usually due to odd headcount, constraints, or lack of compatible opponents. Check suggestions in the unmatched section.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q5) Can I still do manual pairings?</h3>
+        <p>Yes. Use <strong>Create Manual Matchup</strong> and <strong>Replace One Side</strong> motions in the Matchups tab.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q6) Does this app send data to the internet?</h3>
+        <p>No. All data processing is local in the browser for this utility.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q7) I refreshed and lost work. Can I recover it?</h3>
+        <p>Normally yes, because data is stored in browser local storage. Use the status banner and Save Snapshot behavior as confirmation.</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>Q8) How do I share final results with families/coaches?</h3>
+        <p>Use CSV for spreadsheets and records, and PDF for easy read-only distribution.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>File locations used in this guide</h2>
+      <ul>
+        <li>App: <code>wrestling-matchup-generator.html</code></li>
+        <li>Guide: <code>wrestling-matchup-generator-user-guide.html</code></li>
+        <li>Screenshots: <code>wmg-01-setup.png</code> through <code>wmg-06-export.png</code></li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

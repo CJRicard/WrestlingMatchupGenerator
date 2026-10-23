@@ -1,0 +1,2700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wrestling Matchup Generator</title>
+  <link rel="icon" href="data:,">
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+      --cp-card-shadow: 0 0 2px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.14);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+      --cp-card-shadow: 0 0 2px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.45;
+    }
+    h1, h2, h3 { margin: 0 0 0.5rem; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.2rem; }
+    h3 { font-size: 1rem; }
+    .app-shell {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .card {
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      box-shadow: var(--cp-card-shadow);
+      padding: 1rem;
+    }
+    .card-soft {
+      background: var(--cp-surface-soft);
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.75rem;
+    }
+    .topbar {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .topbar-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    button, input, select, textarea {
+      font: inherit;
+      color: inherit;
+      border: 1px solid var(--cp-border-strong);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      padding: 0.45rem 0.6rem;
+    }
+    button {
+      cursor: pointer;
+      background: var(--cp-surface-soft);
+    }
+    button:hover { border-color: var(--cp-accent); }
+    button.primary {
+      background: var(--cp-accent);
+      color: var(--cp-accent-fg);
+      border-color: var(--cp-accent);
+    }
+    button.primary:hover { background: var(--cp-accent-hover); }
+    button.danger {
+      border-color: var(--cp-danger);
+      color: var(--cp-danger);
+    }
+    .muted { color: var(--cp-text-muted); }
+    .small { font-size: 0.86rem; }
+    .statusbar {
+      min-height: 2rem;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.4rem 0.65rem;
+      background: var(--cp-surface-soft);
+      display: flex;
+      align-items: center;
+    }
+    .statusbar.ok { border-color: var(--cp-success); color: var(--cp-success); }
+    .statusbar.warn { border-color: var(--cp-warning); color: var(--cp-warning); }
+    .statusbar.error { border-color: var(--cp-danger); color: var(--cp-danger); }
+    .tabs {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      padding-bottom: 0.3rem;
+    }
+    .tab-btn {
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      padding: 0.45rem 0.8rem;
+    }
+    .tab-btn.active {
+      background: var(--cp-accent-soft);
+      border-color: var(--cp-accent);
+      color: var(--cp-text);
+      font-weight: 600;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .grid-2, .grid-3, .grid-4 {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .field { display: flex; flex-direction: column; gap: 0.22rem; }
+    .inline {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .pill {
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      padding: 0.2rem 0.55rem;
+      font-size: 0.8rem;
+      background: var(--cp-surface-soft);
+      display: inline-flex;
+      gap: 0.25rem;
+      align-items: center;
+    }
+    .pill.warn { border-color: var(--cp-warning); }
+    .pill.danger { border-color: var(--cp-danger); }
+    .pill.ok { border-color: var(--cp-success); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--cp-surface);
+    }
+    th, td {
+      border: 1px solid var(--cp-border);
+      padding: 0.35rem 0.45rem;
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.9rem;
+    }
+    th {
+      background: var(--cp-surface-soft);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    th button {
+      border: none;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      color: inherit;
+      text-align: left;
+    }
+    .table-wrap {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      overflow: auto;
+      max-height: 420px;
+      background: var(--cp-surface);
+    }
+    .dropzone {
+      border: 2px dashed var(--cp-border-strong);
+      border-radius: 0.625rem;
+      padding: 1rem;
+      text-align: center;
+      background: var(--cp-surface-soft);
+    }
+    .dropzone.active {
+      border-color: var(--cp-accent);
+      background: var(--cp-accent-soft);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 0.5rem;
+    }
+    .kpi {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.55rem;
+      background: var(--cp-surface-soft);
+      text-align: left;
+      cursor: pointer;
+    }
+    .kpi .n { font-size: 1.2rem; font-weight: 700; }
+    .kpi:focus { outline: 2px solid var(--cp-accent); outline-offset: 1px; }
+    .help-panel {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.75rem;
+      background: var(--cp-surface-soft);
+    }
+    .split {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1.2fr 1fr;
+    }
+    .toolbar {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .nowrap { white-space: nowrap; }
+    .center { text-align: center; }
+    .mono {
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 0.84rem;
+    }
+    .empty {
+      padding: 1rem;
+      border: 1px dashed var(--cp-border-strong);
+      border-radius: 0.625rem;
+      background: var(--cp-surface-soft);
+    }
+    .inline-message {
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 0.45rem 0.6rem;
+      min-height: 2rem;
+      background: var(--cp-surface-soft);
+      font-size: 0.86rem;
+    }
+    .inline-message.error {
+      border-color: var(--cp-danger);
+      color: var(--cp-danger);
+    }
+    .inline-message.ok {
+      border-color: var(--cp-success);
+      color: var(--cp-success);
+    }
+    .badge-qual-Excellent { border-color: var(--cp-success); }
+    .badge-qual-Good { border-color: var(--cp-link); }
+    .badge-qual-Acceptable { border-color: var(--cp-warning); }
+    .badge-qual-Reviewrecommended { border-color: var(--cp-danger); }
+    .no-print {}
+    @media (max-width: 1100px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: var(--cp-surface); }
+      .no-print, .tabs, .statusbar, .help-panel, .topbar-actions, .dropzone, .toolbar, .card h2 .small {
+        display: none !important;
+      }
+      .card {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin: 0 0 0.4rem;
+      }
+      .table-wrap {
+        max-height: none;
+        border: none;
+        overflow: visible;
+      }
+      table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
+      th, td { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="card">
+      <div class="topbar">
+        <div>
+          <h1>Wrestling Matchup Generator</h1>
+          <div class="muted small">Coach-assistance tool for local, offline event pairing. Coaches review and approve all pairings.</div>
+        </div>
+        <div class="topbar-actions no-print">
+          <button id="btnSaveNow" title="Save data to browser storage now">Save Snapshot</button>
+          <button id="btnClearAll" class="danger" title="Clear all event data and roster">Clear All Data</button>
+        </div>
+      </div>
+      <div id="statusBar" class="statusbar small no-print">Ready.</div>
+    </div>
+
+    <div class="card no-print">
+      <div class="tabs" role="tablist" aria-label="Application sections">
+        <button class="tab-btn active" data-tab="setup" role="tab">1. Event Setup</button>
+        <button class="tab-btn" data-tab="import" role="tab">2. Import or Add Wrestlers</button>
+        <button class="tab-btn" data-tab="roster" role="tab">3. Wrestler Roster</button>
+        <button class="tab-btn" data-tab="settings" role="tab">4. Matching Settings</button>
+        <button class="tab-btn" data-tab="matchups" role="tab">5. Matchups</button>
+        <button class="tab-btn" data-tab="export" role="tab">6. Export Final Matchups page</button>
+      </div>
+    </div>
+
+    <section id="tab-setup" class="tab-panel active">
+      <div class="card">
+        <h2>Event Setup</h2>
+        <div class="grid-3">
+          <div class="field">
+            <label for="eventName">Event name (optional)</label>
+            <input id="eventName" type="text" placeholder="Example: Saturday Scrimmage">
+          </div>
+          <div class="field">
+            <label for="eventDate">Event date (optional)</label>
+            <input id="eventDate" type="date">
+          </div>
+          <div class="field">
+            <label for="eventLocation">Event location (optional)</label>
+            <input id="eventLocation" type="text" placeholder="Example: East Gym">
+          </div>
+        </div>
+        <div class="help-panel small" style="margin-top:0.75rem;">
+          <strong>Guided workflow:</strong>
+          <ol style="margin:0.4rem 0 0 1rem; padding:0;">
+            <li>Add event details.</li>
+            <li>Import or manually enter wrestlers.</li>
+            <li>Review and clean roster.</li>
+            <li>Set matchup preferences.</li>
+            <li>Generate and review rounds and flags.</li>
+            <li>Export CSV or print to PDF.</li>
+          </ol>
+          <div style="margin-top:0.6rem;">
+            <strong>Experience level definitions:</strong><br>
+            <strong>Beginner</strong>: New to the sport, typically year 1, with introductory skills.<br>
+            <strong>Intermediate</strong>: 1 or more years of experience with progressing skills.<br>
+            <strong>Advanced</strong>: 2 or more years of experience with advanced skills.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-import" class="tab-panel">
+      <div class="split">
+        <div class="card">
+          <h2>Delimited file import</h2>
+          <p class="small muted">Import from local CSV/TXT. Headers can vary in capitalization and spacing. Quoted CSV fields are supported.</p>
+          <div class="dropzone" id="dropzone" tabindex="0" aria-label="Drop CSV or TXT file here">
+            Drag and drop a CSV/TXT file here, or use file picker.
+          </div>
+          <div class="toolbar" style="margin-top:0.7rem;">
+            <input id="importFile" type="file" accept=".csv,.txt" multiple>
+            <button id="btnSampleCsv">Download sample CSV template</button>
+          </div>
+          <div class="card-soft" style="margin-top:0.7rem;">
+            <div class="grid-2">
+              <div class="field">
+                <label for="importSchoolMode">School/team assignment for this import batch</label>
+                <select id="importSchoolMode">
+                  <option value="column">Use school values from file</option>
+                  <option value="filename">Use each file name as school/team</option>
+                  <option value="team-a">Force Team A</option>
+                  <option value="team-b">Force Team B</option>
+                  <option value="team-c">Force Team C</option>
+                  <option value="team-d">Force Team D</option>
+                  <option value="custom">Force custom school/team</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="importCustomSchool">Custom team name (used when custom is selected)</label>
+                <input id="importCustomSchool" type="text" placeholder="Example: Team Red">
+              </div>
+            </div>
+          </div>
+          <div class="card-soft" style="margin-top:0.7rem;">
+            <div class="inline">
+              <strong>Duplicate handling:</strong>
+              <label class="inline"><input type="radio" name="dupPolicy" value="skip" checked> Skip duplicates</label>
+              <label class="inline"><input type="radio" name="dupPolicy" value="replace"> Replace existing records</label>
+              <label class="inline"><input type="radio" name="dupPolicy" value="separate"> Import as separate records</label>
+            </div>
+          </div>
+          <div id="importPreviewArea" style="margin-top:0.75rem;"></div>
+        </div>
+        <div class="card">
+          <h2>Manual entry</h2>
+          <div class="grid-2">
+            <div class="field"><label for="mfFirst">First name *</label><input id="mfFirst" type="text"></div>
+            <div class="field"><label for="mfLast">Last name *</label><input id="mfLast" type="text"></div>
+            <div class="field"><label for="mfWeight">Weight (lbs) *</label><input id="mfWeight" type="number" min="0.1" step="0.1"></div>
+            <div class="field"><label for="mfGrade">Grade / age level *</label><input id="mfGrade" type="text" placeholder="K, 1, 1st, Kindergarten, etc."></div>
+            <div class="field">
+              <label for="mfExperience">Experience *</label>
+              <select id="mfExperience">
+                <option value="">Select</option>
+                <option>Beginner</option>
+                <option>Intermediate</option>
+                <option>Advanced</option>
+              </select>
+            </div>
+            <div class="field"><label for="mfSchool">School *</label><input id="mfSchool" type="text"></div>
+            <div class="field"><label for="mfDesiredMatches">Desired # matches</label><input id="mfDesiredMatches" type="number" min="0" max="30" value="1"></div>
+          </div>
+          <div class="toolbar" style="margin-top:0.7rem;">
+            <button id="btnAddManual" class="primary">Add Wrestler</button>
+            <button id="btnUpdateManual">Save Edit</button>
+            <button id="btnDuplicateManual">Duplicate as New</button>
+            <button id="btnDeleteManual" class="danger">Delete Selected</button>
+            <button id="btnClearForm">Clear Form</button>
+          </div>
+          <div id="manualFormMessage" class="inline-message" role="status" aria-live="polite" style="margin-top:0.55rem;">Enter required fields and click Add Wrestler.</div>
+          <div class="small muted" style="margin-top:0.5rem;">Tip: Select a wrestler in the roster table to edit or duplicate.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-roster" class="tab-panel">
+      <div class="card">
+        <h2>Wrestler Roster</h2>
+        <div class="grid-4 no-print">
+          <div class="field"><label for="rfName">Name</label><input id="rfName" type="text" placeholder="Search name"></div>
+          <div class="field"><label for="rfSchool">School</label><input id="rfSchool" type="text"></div>
+          <div class="field"><label for="rfExp">Experience</label><select id="rfExp"><option value="">All</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+          <div class="field"><label for="rfGrade">Grade</label><input id="rfGrade" type="text" placeholder="K, 1, 2, ..."></div>
+          <div class="field"><label for="rfMinWt">Min weight</label><input id="rfMinWt" type="number" min="0" step="0.1"></div>
+          <div class="field"><label for="rfMaxWt">Max weight</label><input id="rfMaxWt" type="number" min="0" step="0.1"></div>
+          <div class="field"><label for="rfMatched">Matched status</label><select id="rfMatched"><option value="all">All</option><option value="matched">Matched in round 1</option><option value="unmatched">Unmatched in round 1</option></select></div>
+          <div class="field"><label>&nbsp;</label><button id="btnResetRosterFilters">Reset filters</button></div>
+        </div>
+        <div id="rosterCounts" class="small" style="margin:0.6rem 0;"></div>
+        <div class="table-wrap">
+          <table id="rosterTable">
+            <thead>
+              <tr>
+                <th class="no-print">Select</th>
+                <th><button data-rsort="firstName">First</button></th>
+                <th><button data-rsort="lastName">Last</button></th>
+                <th><button data-rsort="weight">Weight</button></th>
+                <th><button data-rsort="gradeNorm">Grade</button></th>
+                <th><button data-rsort="experience">Experience</button></th>
+                <th><button data-rsort="school">School</button></th>
+                <th><button data-rsort="desiredMatches">Desired #</button></th>
+                <th>ID</th>
+                <th class="no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <div class="card">
+        <h2>Matching Settings</h2>
+        <div class="grid-3">
+          <div class="field"><label for="setPrefLb">Preferred max weight difference (lbs)</label><input id="setPrefLb" type="number" step="0.1" min="0" value="3"></div>
+          <div class="field"><label for="setAbsLb">Absolute max weight difference (lbs)</label><input id="setAbsLb" type="number" step="0.1" min="0" value="8"></div>
+          <div class="field"><label for="setPrefPct">Preferred max difference (%) of lighter wrestler</label><input id="setPrefPct" type="number" step="0.1" min="0" value="8"></div>
+          <div class="field"><label for="setRounds">Rounds to generate</label><input id="setRounds" type="number" min="1" max="12" value="1"></div>
+          <div class="field"><label for="setDefaultDesiredMatches">Default desired # matches (new/imported wrestlers)</label><input id="setDefaultDesiredMatches" type="number" min="0" max="30" value="1"></div>
+          <div class="field inline"><label><input id="setAllowExceptions" type="checkbox"> Allow exceptions above absolute max</label></div>
+          <div class="field inline"><label><input id="setAllowSameSchool" type="checkbox"> Allow same-school matchups</label></div>
+          <div class="field">
+            <label for="setSchoolMode">School-affiliation matching mode</label>
+            <select id="setSchoolMode">
+              <option value="prefer-different">Prefer different schools (current behavior)</option>
+              <option value="specific-pair">Only match between two selected schools/teams</option>
+              <option value="ignore-school">Ignore school affiliation when generating</option>
+            </select>
+          </div>
+          <div class="field"><label for="setTeam1">Specific pair: School/Team A</label><input id="setTeam1" type="text" placeholder="Example: Team A"></div>
+          <div class="field"><label for="setTeam2">Specific pair: School/Team B</label><input id="setTeam2" type="text" placeholder="Example: Team B"></div>
+        </div>
+        <div class="help-panel small" style="margin-top:0.75rem;">
+          <strong>Priority order used by scoring:</strong> weight difference first, then school difference, then experience gap, then grade gap.<br>
+          These are coach-configurable settings and not official rule compliance checks.
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-matchups" class="tab-panel">
+      <div class="card">
+        <h2>Matchups <span class="small muted">(sorted lightest to heaviest by default)</span></h2>
+        <div class="toolbar no-print">
+          <button id="btnGenerateAll" class="primary">Generate All Rounds</button>
+          <label class="inline">Round <input id="selRoundForOps" type="number" min="1" value="1" style="width:5.5rem;"></label>
+          <button id="btnGenerateRound">Regenerate Selected Round</button>
+          <button id="btnGenerateUnmatched">Regenerate Unmatched Only</button>
+          <button id="btnUndoAdjust">Undo Last Adjustment</button>
+          <button id="btnResetGenerated">Reset to Original Generated</button>
+          <button id="btnRenumberBouts">Renumber Bouts (selected round)</button>
+        </div>
+        <div class="kpi-grid no-print" id="summaryKpis" style="margin:0.75rem 0;"></div>
+        <div class="grid-4 no-print">
+          <div class="field"><label for="mfSearch">Search wrestler</label><input id="mfSearch" type="text"></div>
+          <div class="field"><label for="mfRound">Round</label><select id="mfRound"><option value="">All</option></select></div>
+          <div class="field"><label for="mfQuality">Matchup Effectiveness</label><select id="mfQuality"><option value="">All</option><option>Excellent</option><option>Good</option><option>Acceptable</option><option>Review recommended</option></select></div>
+          <div class="field"><label for="mfSchoolFilter">School contains</label><input id="mfSchoolFilter" type="text"></div>
+          <div class="field"><label for="mfSameSchool">Same-school status</label><select id="mfSameSchool"><option value="">All</option><option value="same">Same school only</option><option value="diff">Different school only</option></select></div>
+          <div class="field"><label for="mfFlagOnly">Review flag filter</label><select id="mfFlagOnly"><option value="">All</option><option value="flagged">Flagged only</option><option value="clean">No flags</option></select></div>
+          <div class="field"><label for="mfSort">Sort by</label><select id="mfSort"><option value="avgWeightAsc">Avg weight (light to heavy)</option><option value="avgWeightDesc">Avg weight (heavy to light)</option><option value="roundBout">Round then bout</option><option value="quality">Quality</option></select></div>
+          <div class="field"><label>&nbsp;</label><button id="btnResetMatchFilters">Reset matchup filters</button></div>
+        </div>
+        <div class="table-wrap" style="margin-top:0.6rem;">
+          <table id="matchTable">
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Bout</th>
+                <th>Wrestler 1</th>
+                <th>School</th>
+                <th>Wt</th>
+                <th>Grade</th>
+                <th>Exp</th>
+                <th>Wrestler 2</th>
+                <th>School</th>
+                <th>Wt</th>
+                <th>Grade</th>
+                <th>Exp</th>
+                <th>Weight diff</th>
+                <th>Grade diff</th>
+                <th>Matchup Effectiveness</th>
+                <th>Review flags</th>
+                <th>Coach notes</th>
+                <th class="no-print">Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card no-print">
+        <h3>Manual adjustments</h3>
+        <div class="grid-3">
+          <div class="card-soft">
+            <strong>Create Manual Matchup</strong>
+            <div class="field"><label for="manRound">Round</label><input id="manRound" type="number" min="1" value="1"></div>
+            <div class="field">
+              <label for="manW1Select">Wrestler 1</label>
+              <select id="manW1Select"><option value="">Select wrestler 1</option></select>
+              <div id="manW1Preview" class="small muted" style="margin-top:0.3rem;">Select Wrestler 1 to view details.</div>
+            </div>
+            <div class="field">
+              <label for="manW2Select">Wrestler 2</label>
+              <select id="manW2Select"><option value="">Select wrestler 2</option></select>
+              <div id="manW2Preview" class="small muted" style="margin-top:0.3rem;">Select Wrestler 2 to view details.</div>
+            </div>
+            <button id="btnManualCreate">Create Manual Matchup</button>
+          </div>
+          <div class="card-soft">
+            <strong>Replace one side of matchup</strong>
+            <div class="field"><label for="repRound">Round</label><input id="repRound" type="number" min="1" value="1"></div>
+            <div class="field"><label for="repMatchSelect">Matchup</label><select id="repMatchSelect"><option value="">Select matchup</option></select></div>
+            <div class="field">
+              <label for="repSide">Replace side</label>
+              <select id="repSide"><option value="w1">Wrestler 1</option><option value="w2">Wrestler 2</option></select>
+              <div id="repSidePreview" class="small muted" style="margin-top:0.3rem;">Select a matchup to see current wrestler details for the selected side.</div>
+            </div>
+            <div class="field"><label for="repWithWrestlerSelect">Replacement wrestler (matched or unmatched)</label><select id="repWithWrestlerSelect"><option value="">Select wrestler</option></select></div>
+            <button id="btnReplaceSide">Replace Wrestler</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Unmatched wrestlers</h3>
+        <div id="unmatchedArea"></div>
+      </div>
+      <div class="card">
+        <h3>Coach guidance and review flags</h3>
+        <div class="help-panel small">
+          <ul style="margin:0.2rem 0 0 1rem; padding:0;">
+            <li><strong>Same-school</strong>: matchup includes wrestlers from the same school.</li>
+            <li><strong>Weight over preferred</strong>: exceeds preferred weight or percent threshold.</li>
+            <li><strong>Weight over absolute</strong>: exceeds absolute threshold (only allowed when exceptions are enabled).</li>
+            <li><strong>Beginner vs Advanced</strong>: largest experience gap fallback.</li>
+            <li><strong>Grade gap &gt; 2</strong>: larger grade difference fallback.</li>
+            <li><strong>Rematch</strong>: pair has previously met in this event across rounds.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-export" class="tab-panel">
+      <div class="card">
+        <h2>Export Final Matchups</h2>
+        <div class="grid-2 no-print">
+          <div class="card-soft">
+            <h3>CSV export</h3>
+            <div class="field">
+              <label for="exportScope">Export scope</label>
+              <select id="exportScope">
+                <option value="all">All matchup results</option>
+                <option value="current">Current selected round</option>
+                <option value="filtered">Currently filtered matchup results</option>
+                <option value="unmatched">Unmatched wrestler list</option>
+                <option value="roster">Complete wrestler roster</option>
+              </select>
+            </div>
+            <div class="field"><label for="exportRound">Round for current-round export</label><input id="exportRound" type="number" min="1" value="1"></div>
+            <button id="btnExportCsv" class="primary">Export CSV</button>
+          </div>
+          <div class="card-soft">
+            <h3>PDF export</h3>
+            <p class="small muted">Uses browser-native print dialog. Print view hides editing controls and includes event details, schools, settings, matchups, and unmatched section.</p>
+            <button id="btnPrintFromExport" class="primary">Save / Print as PDF</button>
+          </div>
+        </div>
+        <div class="small muted">All processing remains local in your browser. No data is transmitted.</div>
+      </div>
+    </section>
+
+    <section id="printSummary" class="card">
+      <h2 id="printTitle">Event Matchup Report</h2>
+      <div class="small" id="printMeta"></div>
+      <div id="printReportBody" class="small" style="margin-top:0.65rem;"></div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const STORAGE_KEY = "wrestlingMatchupGeneratorStateV1";
+      const EXP_LEVELS = ["Beginner", "Intermediate", "Advanced"];
+      const EXP_INDEX = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+      const MAX_OPTIMIZATION_WRESTLERS = 48;
+      const MAX_OPTIMIZATION_PASSES = 4;
+
+      const state = {
+        activeTab: "setup",
+        eventInfo: { name: "", date: "", location: "" },
+        settings: {
+          preferredMaxLb: 3,
+          absoluteMaxLb: 8,
+          preferredMaxPct: 8,
+          allowExceptions: false,
+          allowSameSchool: false,
+          schoolMode: "prefer-different",
+          teamA: "",
+          teamB: "",
+          defaultDesiredMatches: 1,
+          rounds: 1
+        },
+        wrestlers: [],
+        selectedWrestlerId: null,
+        rosterSort: { field: "weight", dir: "asc" },
+        rosterFilters: {
+          name: "", school: "", exp: "", grade: "", minWt: "", maxWt: "", matched: "all"
+        },
+        importDraft: null,
+        rounds: [],
+        originalGeneratedRounds: null,
+        undoStack: [],
+        matchupFilters: {
+          search: "", round: "", quality: "", school: "", sameSchool: "", flagOnly: "", sort: "avgWeightAsc"
+        },
+        generatedAt: null
+      };
+
+      function makeId(prefix) {
+        return prefix + "-" + Math.random().toString(36).slice(2, 10) + "-" + Date.now().toString(36);
+      }
+
+      function normText(v) {
+        return String(v || "").trim();
+      }
+
+      function canon(v) {
+        return normText(v).toLowerCase();
+      }
+
+      function normalizeExperience(v) {
+        const t = canon(v);
+        if (!t) return null;
+        if (t === "beginner" || t === "beg") return "Beginner";
+        if (t === "intermediate" || t === "inter" || t === "int") return "Intermediate";
+        if (t === "experienced" || t === "experience" || t === "exp") return "Intermediate";
+        if (t === "advanced" || t === "adv") return "Advanced";
+        return null;
+      }
+
+      function normalizeGrade(raw) {
+        const t = canon(raw).replace(/\s+/g, "");
+        if (!t) return null;
+        if (t === "k" || t === "kindergarten" || t === "kg" || t === "0") {
+          return { label: "K", norm: 0 };
+        }
+        const m = t.match(/^([1-9]|1[0-2])(st|nd|rd|th)?$/);
+        if (m) {
+          const n = Number(m[1]);
+          return { label: String(n), norm: n };
+        }
+        return null;
+      }
+
+      function parsePositiveWeight(v) {
+        const n = Number(String(v).trim());
+        if (!Number.isFinite(n) || n <= 0) return null;
+        return Math.round(n * 10) / 10;
+      }
+
+      function wrestlerKey(w) {
+        return [canon(w.firstName), canon(w.lastName), canon(w.school), Number(w.weight).toFixed(1)].join("|");
+      }
+
+      function csvEscape(v) {
+        const s = String(v == null ? "" : v);
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }
+
+      function setStatus(msg, tone) {
+        const bar = $("#statusBar");
+        bar.className = "statusbar small no-print";
+        if (tone) bar.classList.add(tone);
+        bar.textContent = msg;
+      }
+
+      function $(sel) { return document.querySelector(sel); }
+      function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return;
+          Object.assign(state, parsed);
+          if (!Array.isArray(state.wrestlers)) state.wrestlers = [];
+          if (!Array.isArray(state.rounds)) state.rounds = [];
+          if (!Array.isArray(state.undoStack)) state.undoStack = [];
+          setStatus("Recovered saved event data from local storage.", "ok");
+        } catch (err) {
+          setStatus("Could not restore saved data. Starting fresh.", "warn");
+        }
+      }
+
+      function clearAllData() {
+        if (!window.confirm("Clear all event data, roster, rounds, and notes? This cannot be undone.")) return;
+        localStorage.removeItem(STORAGE_KEY);
+        window.location.reload();
+      }
+
+      function initTabs() {
+        $all(".tab-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const tab = btn.dataset.tab;
+            state.activeTab = tab;
+            $all(".tab-btn").forEach(b => b.classList.toggle("active", b === btn));
+            $all(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "tab-" + tab));
+          });
+        });
+      }
+
+      function bindEventSetup() {
+        $("#eventName").addEventListener("input", e => { state.eventInfo.name = e.target.value; saveState(); updatePrintMeta(); });
+        $("#eventDate").addEventListener("input", e => { state.eventInfo.date = e.target.value; saveState(); updatePrintMeta(); });
+        $("#eventLocation").addEventListener("input", e => { state.eventInfo.location = e.target.value; saveState(); updatePrintMeta(); });
+      }
+
+      function bindGlobalButtons() {
+        $("#btnSaveNow").addEventListener("click", () => {
+          saveState();
+          setStatus("Snapshot saved to browser local storage.", "ok");
+        });
+        $("#btnClearAll").addEventListener("click", clearAllData);
+        $("#btnPrintFromExport").addEventListener("click", () => window.print());
+      }
+
+      function bindSettings() {
+        const ids = ["setPrefLb", "setAbsLb", "setPrefPct", "setRounds", "setAllowExceptions", "setAllowSameSchool", "setSchoolMode", "setTeam1", "setTeam2", "setDefaultDesiredMatches"];
+        ids.forEach(id => {
+          $("#" + id).addEventListener("input", readSettingsFromUi);
+          $("#" + id).addEventListener("change", readSettingsFromUi);
+        });
+      }
+
+      function readSettingsFromUi() {
+        state.settings.preferredMaxLb = Math.max(0, Number($("#setPrefLb").value || 0));
+        state.settings.absoluteMaxLb = Math.max(0, Number($("#setAbsLb").value || 0));
+        state.settings.preferredMaxPct = Math.max(0, Number($("#setPrefPct").value || 0));
+        state.settings.rounds = Math.max(1, Math.min(12, Number($("#setRounds").value || 1)));
+        state.settings.defaultDesiredMatches = Math.max(0, Math.min(30, Number($("#setDefaultDesiredMatches").value || 1)));
+        state.settings.allowExceptions = $("#setAllowExceptions").checked;
+        state.settings.allowSameSchool = $("#setAllowSameSchool").checked;
+        state.settings.schoolMode = $("#setSchoolMode").value || "prefer-different";
+        state.settings.teamA = normText($("#setTeam1").value);
+        state.settings.teamB = normText($("#setTeam2").value);
+        saveState();
+        updatePrintMeta();
+      }
+
+      function syncUiFromState() {
+        $("#eventName").value = state.eventInfo.name || "";
+        $("#eventDate").value = state.eventInfo.date || "";
+        $("#eventLocation").value = state.eventInfo.location || "";
+
+        $("#setPrefLb").value = state.settings.preferredMaxLb;
+        $("#setAbsLb").value = state.settings.absoluteMaxLb;
+        $("#setPrefPct").value = state.settings.preferredMaxPct;
+        $("#setRounds").value = state.settings.rounds;
+        $("#setDefaultDesiredMatches").value = state.settings.defaultDesiredMatches == null ? 1 : state.settings.defaultDesiredMatches;
+        $("#setAllowExceptions").checked = !!state.settings.allowExceptions;
+        $("#setAllowSameSchool").checked = !!state.settings.allowSameSchool;
+        $("#setSchoolMode").value = state.settings.schoolMode || "prefer-different";
+        $("#setTeam1").value = state.settings.teamA || "";
+        $("#setTeam2").value = state.settings.teamB || "";
+
+        $("#rfName").value = state.rosterFilters.name || "";
+        $("#rfSchool").value = state.rosterFilters.school || "";
+        $("#rfExp").value = state.rosterFilters.exp || "";
+        $("#rfGrade").value = state.rosterFilters.grade || "";
+        $("#rfMinWt").value = state.rosterFilters.minWt || "";
+        $("#rfMaxWt").value = state.rosterFilters.maxWt || "";
+        $("#rfMatched").value = state.rosterFilters.matched || "all";
+
+        $("#mfSearch").value = state.matchupFilters.search || "";
+        $("#mfRound").value = state.matchupFilters.round || "";
+        $("#mfQuality").value = state.matchupFilters.quality || "";
+        $("#mfSchoolFilter").value = state.matchupFilters.school || "";
+        $("#mfSameSchool").value = state.matchupFilters.sameSchool || "";
+        $("#mfFlagOnly").value = state.matchupFilters.flagOnly || "";
+        $("#mfSort").value = state.matchupFilters.sort || "avgWeightAsc";
+        if (!$("#mfDesiredMatches").value) $("#mfDesiredMatches").value = String(state.settings.defaultDesiredMatches || 1);
+      }
+
+      function bindRosterFilters() {
+        const pairs = [
+          ["rfName", "name"], ["rfSchool", "school"], ["rfExp", "exp"], ["rfGrade", "grade"],
+          ["rfMinWt", "minWt"], ["rfMaxWt", "maxWt"], ["rfMatched", "matched"]
+        ];
+        pairs.forEach(([id, key]) => {
+          $("#" + id).addEventListener("input", e => {
+            state.rosterFilters[key] = e.target.value;
+            renderRoster();
+            saveState();
+          });
+          $("#" + id).addEventListener("change", e => {
+            state.rosterFilters[key] = e.target.value;
+            renderRoster();
+            saveState();
+          });
+        });
+        $("#btnResetRosterFilters").addEventListener("click", () => {
+          state.rosterFilters = { name: "", school: "", exp: "", grade: "", minWt: "", maxWt: "", matched: "all" };
+          syncUiFromState();
+          renderRoster();
+          saveState();
+        });
+        $all("[data-rsort]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const f = btn.dataset.rsort;
+            if (state.rosterSort.field === f) state.rosterSort.dir = state.rosterSort.dir === "asc" ? "desc" : "asc";
+            else { state.rosterSort.field = f; state.rosterSort.dir = "asc"; }
+            renderRoster();
+            saveState();
+          });
+        });
+      }
+
+      function bindManualEntry() {
+        $("#btnAddManual").addEventListener("click", addManualWrestler);
+        $("#btnUpdateManual").addEventListener("click", updateManualWrestler);
+        $("#btnDuplicateManual").addEventListener("click", duplicateManualWrestler);
+        $("#btnDeleteManual").addEventListener("click", deleteSelectedWrestler);
+        $("#btnClearForm").addEventListener("click", clearManualForm);
+        ["#mfFirst", "#mfLast", "#mfWeight", "#mfGrade", "#mfExperience", "#mfSchool", "#mfDesiredMatches"].forEach(sel => {
+          const el = $(sel);
+          if (!el) return;
+          el.addEventListener("input", () => setManualFormMessage("", ""));
+          el.addEventListener("change", () => setManualFormMessage("", ""));
+        });
+      }
+
+      function setManualFormMessage(msg, tone) {
+        const box = $("#manualFormMessage");
+        if (!box) return;
+        box.className = "inline-message";
+        if (tone) box.classList.add(tone);
+        box.textContent = msg || " ";
+      }
+
+      function getManualFormData() {
+        return {
+          firstName: $("#mfFirst").value,
+          lastName: $("#mfLast").value,
+          weight: $("#mfWeight").value,
+          gradeRaw: $("#mfGrade").value,
+          experienceRaw: $("#mfExperience").value,
+          school: $("#mfSchool").value,
+          desiredMatches: $("#mfDesiredMatches").value
+        };
+      }
+
+      function validateInputRow(obj) {
+        const errors = [];
+        const firstName = normText(obj.firstName);
+        const lastName = normText(obj.lastName);
+        const school = normText(obj.school);
+        const weight = parsePositiveWeight(obj.weight);
+        const desiredMatchesRaw = obj.desiredMatches == null || obj.desiredMatches === "" ? state.settings.defaultDesiredMatches : Number(obj.desiredMatches);
+        const desiredMatches = Number.isFinite(desiredMatchesRaw) ? Math.max(0, Math.min(30, Math.floor(desiredMatchesRaw))) : state.settings.defaultDesiredMatches;
+        const grade = normalizeGrade(obj.gradeRaw || obj.ageLevel || obj.grade);
+        const exp = normalizeExperience(obj.experienceRaw || obj.experience);
+        if (!firstName) errors.push("Missing first name");
+        if (!lastName) errors.push("Missing last name");
+        if (!school) errors.push("Missing school");
+        if (weight == null) errors.push("Invalid or nonpositive weight");
+        if (!grade) errors.push("Unrecognized grade/age level");
+        if (!exp) errors.push("Unrecognized experience");
+        return {
+          valid: errors.length === 0,
+          errors,
+          normalized: {
+            firstName,
+            lastName,
+            school,
+            weight,
+            gradeLabel: grade ? grade.label : "",
+            gradeNorm: grade ? grade.norm : null,
+            experience: exp,
+            desiredMatches
+          }
+        };
+      }
+
+      function addManualWrestler() {
+        const input = getManualFormData();
+        const checked = validateInputRow(input);
+        if (!checked.valid) {
+          setManualFormMessage("Could not add wrestler: " + checked.errors.join("; "), "error");
+          setStatus("Could not add wrestler: " + checked.errors.join("; "), "error");
+          return;
+        }
+        const w = {
+          id: makeId("w"),
+          firstName: checked.normalized.firstName,
+          lastName: checked.normalized.lastName,
+          weight: checked.normalized.weight,
+          gradeLabel: checked.normalized.gradeLabel,
+          gradeNorm: checked.normalized.gradeNorm,
+          experience: checked.normalized.experience,
+          school: checked.normalized.school,
+          desiredMatches: checked.normalized.desiredMatches
+        };
+        state.wrestlers.push(w);
+        state.selectedWrestlerId = w.id;
+        clearGeneratedBecauseRosterChanged();
+        renderAll();
+        saveState();
+        setManualFormMessage("Wrestler added successfully.", "ok");
+        setStatus("Wrestler added.", "ok");
+      }
+
+      function updateManualWrestler() {
+        const id = state.selectedWrestlerId;
+        if (!id) {
+          setStatus("Select a wrestler in the roster before saving edits.", "warn");
+          return;
+        }
+        const idx = state.wrestlers.findIndex(w => w.id === id);
+        if (idx < 0) return;
+        const input = getManualFormData();
+        const checked = validateInputRow(input);
+        if (!checked.valid) {
+          setStatus("Could not save edits: " + checked.errors.join("; "), "error");
+          return;
+        }
+        Object.assign(state.wrestlers[idx], {
+          firstName: checked.normalized.firstName,
+          lastName: checked.normalized.lastName,
+          weight: checked.normalized.weight,
+          gradeLabel: checked.normalized.gradeLabel,
+          gradeNorm: checked.normalized.gradeNorm,
+          experience: checked.normalized.experience,
+          school: checked.normalized.school,
+          desiredMatches: checked.normalized.desiredMatches
+        });
+        clearGeneratedBecauseRosterChanged();
+        renderAll();
+        saveState();
+        setStatus("Wrestler updated.", "ok");
+      }
+
+      function duplicateManualWrestler() {
+        const input = getManualFormData();
+        const checked = validateInputRow(input);
+        if (!checked.valid) {
+          setStatus("Could not duplicate: " + checked.errors.join("; "), "error");
+          return;
+        }
+        const w = {
+          id: makeId("w"),
+          firstName: checked.normalized.firstName,
+          lastName: checked.normalized.lastName,
+          weight: checked.normalized.weight,
+          gradeLabel: checked.normalized.gradeLabel,
+          gradeNorm: checked.normalized.gradeNorm,
+          experience: checked.normalized.experience,
+          school: checked.normalized.school,
+          desiredMatches: checked.normalized.desiredMatches
+        };
+        state.wrestlers.push(w);
+        state.selectedWrestlerId = w.id;
+        clearGeneratedBecauseRosterChanged();
+        renderAll();
+        saveState();
+        setStatus("Created duplicate as a new wrestler record.", "ok");
+      }
+
+      function deleteSelectedWrestler() {
+        const id = state.selectedWrestlerId;
+        if (!id) {
+          setStatus("Select a wrestler first.", "warn");
+          return;
+        }
+        const w = state.wrestlers.find(x => x.id === id);
+        if (!w) return;
+        if (!window.confirm("Delete " + w.firstName + " " + w.lastName + "?")) return;
+        state.wrestlers = state.wrestlers.filter(x => x.id !== id);
+        state.selectedWrestlerId = null;
+        clearGeneratedBecauseRosterChanged();
+        renderAll();
+        saveState();
+        setStatus("Wrestler deleted.", "ok");
+      }
+
+      function clearManualForm() {
+        state.selectedWrestlerId = null;
+        $("#mfFirst").value = "";
+        $("#mfLast").value = "";
+        $("#mfWeight").value = "";
+        $("#mfGrade").value = "";
+        $("#mfExperience").value = "";
+        $("#mfSchool").value = "";
+        $("#mfDesiredMatches").value = String(state.settings.defaultDesiredMatches || 1);
+      }
+
+      function fillManualForm(w) {
+        $("#mfFirst").value = w.firstName;
+        $("#mfLast").value = w.lastName;
+        $("#mfWeight").value = w.weight;
+        $("#mfGrade").value = w.gradeLabel;
+        $("#mfExperience").value = w.experience;
+        $("#mfSchool").value = w.school;
+        $("#mfDesiredMatches").value = String(w.desiredMatches == null ? state.settings.defaultDesiredMatches : w.desiredMatches);
+      }
+
+      function parseCsv(text) {
+        const rows = [];
+        let i = 0;
+        let row = [];
+        let field = "";
+        let inQuotes = false;
+        while (i < text.length) {
+          const ch = text[i];
+          if (inQuotes) {
+            if (ch === '"') {
+              if (text[i + 1] === '"') {
+                field += '"';
+                i += 2;
+                continue;
+              } else {
+                inQuotes = false;
+                i++;
+                continue;
+              }
+            } else {
+              field += ch;
+              i++;
+              continue;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+              i++;
+              continue;
+            }
+            if (ch === ",") {
+              row.push(field);
+              field = "";
+              i++;
+              continue;
+            }
+            if (ch === "\n") {
+              row.push(field);
+              rows.push(row);
+              row = [];
+              field = "";
+              i++;
+              continue;
+            }
+            if (ch === "\r") {
+              i++;
+              continue;
+            }
+            field += ch;
+            i++;
+          }
+        }
+        row.push(field);
+        if (row.length > 1 || row[0] !== "") rows.push(row);
+        return rows;
+      }
+
+      function normalizeHeader(h) {
+        return canon(h).replace(/[^a-z0-9]/g, "");
+      }
+
+      function mapHeaderKey(h) {
+        const k = normalizeHeader(h);
+        const map = {
+          firstname: "firstName",
+          first: "firstName",
+          lastname: "lastName",
+          last: "lastName",
+          weight: "weight",
+          agelevel: "gradeRaw",
+          grade: "gradeRaw",
+          gradelevel: "gradeRaw",
+          experience: "experienceRaw",
+          experiencerating: "experienceRaw",
+          school: "school",
+          schoolaffiliation: "school",
+          desiredmatches: "desiredMatches",
+          desiredmatchcount: "desiredMatches",
+          matchgoal: "desiredMatches"
+        };
+        return map[k] || null;
+      }
+
+      function parseImportText(text, options) {
+        options = options || {};
+        const rows = parseCsv(text);
+        if (!rows.length) return { errors: ["File is empty"], records: [] };
+        const headerRow = rows[0];
+        const mapped = headerRow.map(mapHeaderKey);
+        const hasHeader = mapped.some(Boolean);
+        const columns = hasHeader ? mapped : ["firstName", "lastName", "weight", "gradeRaw", "experienceRaw", "school", "desiredMatches"];
+        const dataRows = hasHeader ? rows.slice(1) : rows;
+
+        const existingKeyMap = new Map(state.wrestlers.map(w => [wrestlerKey(w), w]));
+        const records = [];
+        const errors = [];
+        dataRows.forEach((r, idx) => {
+          if (r.every(cell => normText(cell) === "")) return;
+          const rec = { firstName: "", lastName: "", weight: "", gradeRaw: "", experienceRaw: "", school: "", desiredMatches: "" };
+          for (let i = 0; i < r.length; i++) {
+            const col = columns[i] || null;
+            if (col) rec[col] = r[i];
+          }
+          if (options.schoolMode === "filename" && !normText(rec.school)) rec.school = options.fileLabel || "";
+          if (options.schoolMode === "forced") rec.school = options.forcedSchool || rec.school;
+          const checked = validateInputRow(rec);
+          const candidate = checked.normalized;
+          let duplicateOf = null;
+          if (checked.valid) {
+            const key = [canon(candidate.firstName), canon(candidate.lastName), canon(candidate.school), candidate.weight.toFixed(1)].join("|");
+            if (existingKeyMap.has(key)) duplicateOf = existingKeyMap.get(key).id;
+          }
+          records.push({
+            sourceRow: hasHeader ? idx + 2 : idx + 1,
+            sourceFile: options.fileName || "",
+            input: rec,
+            checked,
+            duplicateOf
+          });
+        });
+        if (!records.length && !errors.length) errors.push("No data rows found.");
+        return { errors, records, hasHeader };
+      }
+
+      function renderImportPreview() {
+        const host = $("#importPreviewArea");
+        const draft = state.importDraft;
+        if (!draft) {
+          host.innerHTML = '<div class="empty small">No file loaded yet.</div>';
+          return;
+        }
+        if (draft.errors.length) {
+          host.innerHTML = '<div class="pill danger">' + draft.errors.join("; ") + "</div>";
+          return;
+        }
+        const total = draft.records.length;
+        const valid = draft.records.filter(r => r.checked.valid).length;
+        const dup = draft.records.filter(r => r.duplicateOf).length;
+        const invalid = draft.records.filter(r => !r.checked.valid).length;
+        let html = "";
+        html += '<div class="small inline">';
+        html += '<span class="pill">Rows: ' + total + "</span>";
+        html += '<span class="pill ok">Valid: ' + valid + "</span>";
+        html += '<span class="pill warn">Duplicates: ' + dup + "</span>";
+        html += '<span class="pill danger">Invalid: ' + invalid + "</span>";
+        html += "</div>";
+        html += '<div class="table-wrap" style="margin-top:0.55rem; max-height:280px;">';
+        html += "<table><thead><tr><th>File</th><th>Row</th><th>Name</th><th>School</th><th>Weight</th><th>Grade</th><th>Exp</th><th>Desired #</th><th>Status</th><th>Validation</th></tr></thead><tbody>";
+        draft.records.forEach(r => {
+          const n = r.checked.normalized;
+          const status = !r.checked.valid ? "Invalid" : (r.duplicateOf ? "Duplicate" : "Valid");
+          const msgs = !r.checked.valid ? r.checked.errors.join("; ") : (r.duplicateOf ? "Likely duplicate of ID " + r.duplicateOf : "Ready");
+          html += "<tr>";
+          html += "<td>" + csvEscape(r.sourceFile || "") + "</td>";
+          html += "<td>" + r.sourceRow + "</td>";
+          html += "<td>" + csvEscape((n.firstName || "") + " " + (n.lastName || "")) + "</td>";
+          html += "<td>" + csvEscape(n.school || "") + "</td>";
+          html += "<td>" + (n.weight == null ? "" : n.weight.toFixed(1)) + "</td>";
+          html += "<td>" + csvEscape(n.gradeLabel || "") + "</td>";
+          html += "<td>" + csvEscape(n.experience || "") + "</td>";
+          html += "<td>" + (n.desiredMatches == null ? "" : n.desiredMatches) + "</td>";
+          html += "<td>" + status + "</td>";
+          html += "<td class='small'>" + csvEscape(msgs) + "</td>";
+          html += "</tr>";
+        });
+        html += "</tbody></table></div>";
+        html += '<div class="toolbar" style="margin-top:0.5rem;"><button id="btnImportValid" class="primary">Import Valid Rows</button><button id="btnDiscardImport">Discard Preview</button></div>';
+        host.innerHTML = html;
+        $("#btnImportValid").addEventListener("click", importDraftRows);
+        $("#btnDiscardImport").addEventListener("click", () => {
+          state.importDraft = null;
+          renderImportPreview();
+        });
+      }
+
+      function importDraftRows() {
+        const draft = state.importDraft;
+        if (!draft || draft.errors.length) return;
+        const policy = document.querySelector('input[name="dupPolicy"]:checked').value;
+        let imported = 0;
+        let skipped = 0;
+        let replaced = 0;
+        let invalid = 0;
+        let duplicateCount = 0;
+        const existingByKey = new Map(state.wrestlers.map(w => [wrestlerKey(w), w]));
+
+        draft.records.forEach(r => {
+          if (!r.checked.valid) { invalid++; return; }
+          const n = r.checked.normalized;
+          const candidate = {
+            id: makeId("w"),
+            firstName: n.firstName,
+            lastName: n.lastName,
+            weight: n.weight,
+            gradeLabel: n.gradeLabel,
+            gradeNorm: n.gradeNorm,
+            experience: n.experience,
+            school: n.school,
+            desiredMatches: n.desiredMatches
+          };
+          const key = wrestlerKey(candidate);
+          const existing = existingByKey.get(key);
+          if (existing) {
+            duplicateCount++;
+            if (policy === "skip") {
+              skipped++;
+            } else if (policy === "replace") {
+              const idx = state.wrestlers.findIndex(w => w.id === existing.id);
+              if (idx >= 0) {
+                state.wrestlers[idx] = Object.assign({}, candidate, { id: existing.id });
+                replaced++;
+              } else {
+                state.wrestlers.push(candidate);
+                imported++;
+              }
+            } else {
+              state.wrestlers.push(candidate);
+              imported++;
+            }
+          } else {
+            state.wrestlers.push(candidate);
+            existingByKey.set(key, candidate);
+            imported++;
+          }
+        });
+        state.importDraft = null;
+        clearGeneratedBecauseRosterChanged();
+        renderAll();
+        saveState();
+        setStatus("Import complete: " + imported + " imported, " + replaced + " replaced, " + skipped + " skipped, " + duplicateCount + " duplicates, " + invalid + " invalid.", imported ? "ok" : "warn");
+      }
+
+      function bindImport() {
+        const input = $("#importFile");
+        input.addEventListener("change", async (e) => {
+          if (!e.target.files || !e.target.files.length) return;
+          await loadImportFiles(Array.from(e.target.files));
+          input.value = "";
+        });
+
+        const dz = $("#dropzone");
+        ["dragenter", "dragover"].forEach(ev => dz.addEventListener(ev, e => {
+          e.preventDefault();
+          dz.classList.add("active");
+        }));
+        ["dragleave", "drop"].forEach(ev => dz.addEventListener(ev, e => {
+          e.preventDefault();
+          dz.classList.remove("active");
+        }));
+        dz.addEventListener("drop", async (e) => {
+          const files = e.dataTransfer && e.dataTransfer.files;
+          if (!files || !files.length) return;
+          await loadImportFiles(Array.from(files));
+        });
+        dz.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") input.click();
+        });
+
+        $("#btnSampleCsv").addEventListener("click", downloadSampleCsv);
+      }
+
+      function getImportSchoolMode() {
+        const mode = $("#importSchoolMode").value;
+        if (mode === "column") return { schoolMode: "column", forcedSchool: "" };
+        if (mode === "filename") return { schoolMode: "filename", forcedSchool: "" };
+        if (mode === "custom") return { schoolMode: "forced", forcedSchool: normText($("#importCustomSchool").value) };
+        const mapped = { "team-a": "Team A", "team-b": "Team B", "team-c": "Team C", "team-d": "Team D" };
+        return { schoolMode: "forced", forcedSchool: mapped[mode] || "" };
+      }
+
+      async function loadImportFiles(files) {
+        const validFiles = files.filter(file => {
+          const name = (file.name || "").toLowerCase();
+          return name.endsWith(".csv") || name.endsWith(".txt");
+        });
+        if (!validFiles.length) {
+          setStatus("Please choose at least one .csv or .txt file.", "error");
+          return;
+        }
+        const mode = getImportSchoolMode();
+        if (mode.schoolMode === "forced" && !mode.forcedSchool) {
+          setStatus("Enter a custom school/team name or select Team A/B/C/D before importing.", "warn");
+          return;
+        }
+        const aggregate = { errors: [], records: [], hasHeader: false };
+        for (const file of validFiles) {
+          const text = await file.text();
+          const fileLabel = normText(file.name).replace(/\.[^.]+$/, "") || "Unnamed Team";
+          const draft = parseImportText(text, {
+            schoolMode: mode.schoolMode,
+            forcedSchool: mode.forcedSchool,
+            fileName: file.name,
+            fileLabel
+          });
+          aggregate.errors = aggregate.errors.concat((draft.errors || []).map(e => file.name + ": " + e));
+          aggregate.records = aggregate.records.concat(draft.records || []);
+          aggregate.hasHeader = aggregate.hasHeader || !!draft.hasHeader;
+        }
+        state.importDraft = aggregate;
+        renderImportPreview();
+        if (aggregate.errors.length) setStatus("Import preview has errors.", "warn");
+        else setStatus("Import preview ready for " + validFiles.length + " file(s). Review and click Import Valid Rows.", "ok");
+      }
+
+      function downloadSampleCsv() {
+        const sample = [
+          "firstname,lastname,weight,agelevel,experience,school,desiredmatches",
+          "Avery,Hale,72.5,5,Beginner,River View,2",
+          "Jordan,Kim,73.1,5,Intermediate,North Ridge,2",
+          "\"Riley\",Ortiz,81.0,6,Advanced,\"Central, Academy\",1",
+          "Skyler,Patel,95.4,7,Intermediate,Lakewood,3",
+          "Casey,Nguyen,95.7,8,Beginner,Hillside Prep,2"
+        ].join("\n");
+        downloadTextFile(sample, "wrestling-import-template.csv", "text/csv");
+      }
+
+      function bindMatchControls() {
+        $("#btnGenerateAll").addEventListener("click", () => generateAllRounds());
+        $("#btnGenerateRound").addEventListener("click", () => {
+          const r = Math.max(1, Number($("#selRoundForOps").value || 1));
+          generateRound(r, { preserveLocked: true, replaceRound: true });
+        });
+        $("#btnGenerateUnmatched").addEventListener("click", () => {
+          const r = Math.max(1, Number($("#selRoundForOps").value || 1));
+          regenerateUnmatchedOnly(r);
+        });
+        $("#btnUndoAdjust").addEventListener("click", undoLastAdjustment);
+        $("#btnResetGenerated").addEventListener("click", resetToOriginalGenerated);
+        $("#btnRenumberBouts").addEventListener("click", () => {
+          const r = Math.max(1, Number($("#selRoundForOps").value || 1));
+          renumberBouts(r);
+        });
+
+        $("#btnManualCreate").addEventListener("click", performManualCreate);
+        $("#btnReplaceSide").addEventListener("click", performReplaceSide);
+        $("#manW1Select").addEventListener("change", updateManualCreatePreviews);
+        $("#manW2Select").addEventListener("change", updateManualCreatePreviews);
+        $("#repMatchSelect").addEventListener("change", updateReplaceSidePreview);
+        $("#repSide").addEventListener("change", updateReplaceSidePreview);
+        ["manRound", "repRound"].forEach(id => {
+          $("#" + id).addEventListener("input", refreshManualAdjustSelectors);
+          $("#" + id).addEventListener("change", refreshManualAdjustSelectors);
+        });
+      }
+
+      function wrestlerDisplay(w) {
+        return w.firstName + " " + w.lastName +
+          " | Grade " + w.gradeLabel +
+          " | " + w.weight.toFixed(1) + " lb" +
+          " | " + w.experience +
+          " | " + w.school;
+      }
+
+      function matchupDisplay(m) {
+        const a = getWrestlerById(m.w1Id);
+        const b = getWrestlerById(m.w2Id);
+        return "Bout " + m.bout + ": " + a.firstName + " " + a.lastName + " vs " + b.firstName + " " + b.lastName;
+      }
+
+      function fillSelectOptions(sel, options, placeholder) {
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">' + (placeholder || "Select") + "</option>" +
+          options.map(o => '<option value="' + o.value + '">' + csvEscape(o.label) + "</option>").join("");
+        if (options.some(o => String(o.value) === String(current))) sel.value = current;
+      }
+
+      function refreshManualAdjustSelectors() {
+        const manRound = Number($("#manRound").value || 1);
+        const repRound = Number($("#repRound").value || 1);
+
+        const repRoundData = findRoundByNum(repRound);
+        const manRoundData = findRoundByNum(manRound);
+
+        const repOptions = repRoundData ? repRoundData.matchups.map(m => ({ value: m.id, label: matchupDisplay(m) })) : [];
+        fillSelectOptions($("#repMatchSelect"), repOptions, "Select matchup");
+
+        const createPool = state.wrestlers.slice().sort((a, b) => {
+          return (a.weight - b.weight) || (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName);
+        });
+        const matchedMap = new Map();
+        if (repRoundData) {
+          repRoundData.matchups.forEach(m => {
+            matchedMap.set(m.w1Id, "Matched");
+            matchedMap.set(m.w2Id, "Matched");
+          });
+        }
+        const replacementPool = state.wrestlers.slice().sort((a, b) => {
+          return (a.weight - b.weight) || (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName);
+        });
+        fillSelectOptions($("#manW1Select"), createPool.map(w => ({ value: w.id, label: wrestlerDisplay(w) })), "Select wrestler 1");
+        fillSelectOptions($("#manW2Select"), createPool.map(w => ({ value: w.id, label: wrestlerDisplay(w) })), "Select wrestler 2");
+        fillSelectOptions($("#repWithWrestlerSelect"), replacementPool.map(w => ({
+          value: w.id,
+          label:
+            w.firstName + " " + w.lastName +
+            " | " + w.weight.toFixed(1) + " lb" +
+            " | Grade " + w.gradeLabel +
+            " | " + w.experience +
+            " | " + w.school +
+            " | " + (matchedMap.get(w.id) || "Unmatched")
+        })), "Select wrestler");
+        updateManualCreatePreviews();
+        updateReplaceSidePreview();
+      }
+
+      function updateManualCreatePreviews() {
+        const w1 = getWrestlerById(normText($("#manW1Select").value));
+        const w2 = getWrestlerById(normText($("#manW2Select").value));
+        const p1 = $("#manW1Preview");
+        const p2 = $("#manW2Preview");
+        if (p1) p1.textContent = w1
+          ? ("Name: " + w1.firstName + " " + w1.lastName + " | Grade " + w1.gradeLabel + " | " + w1.weight.toFixed(1) + " lb | " + w1.experience + " | " + w1.school)
+          : "Select Wrestler 1 to view details.";
+        if (p2) p2.textContent = w2
+          ? ("Name: " + w2.firstName + " " + w2.lastName + " | Grade " + w2.gradeLabel + " | " + w2.weight.toFixed(1) + " lb | " + w2.experience + " | " + w2.school)
+          : "Select Wrestler 2 to view details.";
+      }
+
+      function updateReplaceSidePreview() {
+        const box = $("#repSidePreview");
+        if (!box) return;
+        const roundNum = Number($("#repRound").value || 1);
+        const matchId = normText($("#repMatchSelect").value);
+        const side = $("#repSide").value || "w1";
+        const round = findRoundByNum(roundNum);
+        if (!round || !matchId) {
+          box.textContent = "Select a matchup to see current wrestler details for the selected side.";
+          return;
+        }
+        const matchup = round.matchups.find(m => m.id === matchId);
+        if (!matchup) {
+          box.textContent = "Selected matchup not found.";
+          return;
+        }
+        const wrestlerId = side === "w1" ? matchup.w1Id : matchup.w2Id;
+        const w = getWrestlerById(wrestlerId);
+        if (!w) {
+          box.textContent = "Wrestler details unavailable.";
+          return;
+        }
+        box.textContent =
+          (side === "w1" ? "Wrestler 1" : "Wrestler 2") + ": " +
+          w.firstName + " " + w.lastName +
+          " | Grade " + w.gradeLabel +
+          " | " + w.weight.toFixed(1) + " lb" +
+          " | " + w.experience +
+          " | " + w.school;
+      }
+
+      function getWrestlerById(id) {
+        return state.wrestlers.find(w => w.id === id) || null;
+      }
+
+      function pairKey(a, b) {
+        return [a, b].sort().join("~");
+      }
+
+      function getPairHistoryBeforeRound(roundNum) {
+        const set = new Set();
+        state.rounds.forEach(r => {
+          if (r.roundNumber < roundNum) {
+            r.matchups.forEach(m => set.add(pairKey(m.w1Id, m.w2Id)));
+          }
+        });
+        return set;
+      }
+
+      function getMatchCountBeforeRound(wrestlerId, roundNum) {
+        let n = 0;
+        state.rounds.forEach(r => {
+          if (r.roundNumber < roundNum) {
+            r.matchups.forEach(m => {
+              if (m.w1Id === wrestlerId || m.w2Id === wrestlerId) n++;
+            });
+          }
+        });
+        return n;
+      }
+
+      function isSpecificTeamPairAllowed(w1, w2) {
+        const a = canon(state.settings.teamA || "");
+        const b = canon(state.settings.teamB || "");
+        if (!a || !b) return true;
+        const s1 = canon(w1.school), s2 = canon(w2.school);
+        return (s1 === a && s2 === b) || (s1 === b && s2 === a);
+      }
+
+      function computePairMetrics(w1, w2, roundNum, priorPairs) {
+        const absDiff = Math.abs(w1.weight - w2.weight);
+        const lighter = Math.min(w1.weight, w2.weight);
+        const pctDiff = lighter > 0 ? (absDiff / lighter) * 100 : 0;
+        const sameSchool = canon(w1.school) === canon(w2.school);
+        const expDiff = Math.abs(EXP_INDEX[w1.experience] - EXP_INDEX[w2.experience]);
+        const beginnerVsAdvanced = expDiff === 2;
+        const gradeDiff = Math.abs(w1.gradeNorm - w2.gradeNorm);
+        const overAbs = absDiff > state.settings.absoluteMaxLb;
+        const overPref = absDiff > state.settings.preferredMaxLb || pctDiff > state.settings.preferredMaxPct;
+        const rematch = priorPairs.has(pairKey(w1.id, w2.id));
+        return { absDiff, pctDiff, sameSchool, expDiff, beginnerVsAdvanced, gradeDiff, overAbs, overPref, rematch };
+      }
+
+      function pairAllowed(metrics) {
+        if (!state.settings.allowExceptions && metrics.overAbs) return false;
+        if (!state.settings.allowSameSchool && metrics.sameSchool) return false;
+        return true;
+      }
+
+      function scorePair(w1, w2, roundNum, priorPairs) {
+        const m = computePairMetrics(w1, w2, roundNum, priorPairs);
+        if (state.settings.schoolMode === "specific-pair" && !isSpecificTeamPairAllowed(w1, w2)) {
+          return { valid: false, score: Number.POSITIVE_INFINITY, metrics: m };
+        }
+        if (!state.settings.allowExceptions && m.overAbs) return { valid: false, score: Number.POSITIVE_INFINITY, metrics: m };
+        let score = 0;
+        score += m.absDiff * 1000;
+        score += Math.max(0, m.absDiff - state.settings.preferredMaxLb) * 90;
+        score += Math.max(0, m.pctDiff - state.settings.preferredMaxPct) * 70;
+        if (state.settings.schoolMode === "prefer-different") {
+          score += m.sameSchool ? 300 : 0;
+          if (!state.settings.allowSameSchool && m.sameSchool) score += 10000;
+        }
+        score += m.expDiff * 90;
+        score += m.beginnerVsAdvanced ? 180 : 0;
+        score += m.gradeDiff * 45;
+        score += m.gradeDiff > 2 ? 120 : 0;
+        score += m.rematch ? 240 : 0;
+        return { valid: true, score, metrics: m };
+      }
+
+      function tieVector(w1, w2, metrics) {
+        const a = canon(w1.school + " " + w1.lastName + " " + w1.firstName);
+        const b = canon(w2.school + " " + w2.lastName + " " + w2.firstName);
+        const names = [a, b].sort();
+        return [
+          metrics.absDiff,
+          metrics.sameSchool ? 1 : 0,
+          metrics.expDiff,
+          metrics.gradeDiff,
+          names[0],
+          names[1]
+        ];
+      }
+
+      function compareLex(a, b) {
+        for (let i = 0; i < Math.max(a.length, b.length); i++) {
+          const av = a[i];
+          const bv = b[i];
+          if (av === bv) continue;
+          if (typeof av === "number" && typeof bv === "number") return av - bv;
+          return String(av).localeCompare(String(bv));
+        }
+        return 0;
+      }
+
+      function buildRound(roundNum, lockedMatchups) {
+        const lockedIds = new Set();
+        lockedMatchups.forEach(m => { lockedIds.add(m.w1Id); lockedIds.add(m.w2Id); });
+        const available = state.wrestlers.filter(w => {
+          if (lockedIds.has(w.id)) return false;
+          const desired = w.desiredMatches == null ? state.settings.defaultDesiredMatches : w.desiredMatches;
+          return getMatchCountBeforeRound(w.id, roundNum) < desired;
+        });
+        const priorPairs = getPairHistoryBeforeRound(roundNum);
+
+        const pairCandidates = [];
+        for (let i = 0; i < available.length; i++) {
+          for (let j = i + 1; j < available.length; j++) {
+            const w1 = available[i], w2 = available[j];
+            const scored = scorePair(w1, w2, roundNum, priorPairs);
+            if (!scored.valid) continue;
+            pairCandidates.push({
+              a: w1.id, b: w2.id, score: scored.score, metrics: scored.metrics,
+              tie: tieVector(w1, w2, scored.metrics)
+            });
+          }
+        }
+        pairCandidates.sort((x, y) => {
+          if (x.score !== y.score) return x.score - y.score;
+          return compareLex(x.tie, y.tie);
+        });
+
+        const used = new Set();
+        const pairs = [];
+        pairCandidates.forEach(c => {
+          if (used.has(c.a) || used.has(c.b)) return;
+          used.add(c.a); used.add(c.b);
+          pairs.push({ w1Id: c.a, w2Id: c.b, metrics: c.metrics, score: c.score });
+        });
+
+        if (available.length <= MAX_OPTIMIZATION_WRESTLERS) {
+          let improved = true;
+          let pass = 0;
+          while (improved && pass < MAX_OPTIMIZATION_PASSES) {
+            pass++;
+            improved = false;
+            for (let i = 0; i < pairs.length; i++) {
+              for (let j = i + 1; j < pairs.length; j++) {
+                const p1 = pairs[i], p2 = pairs[j];
+                const a = getWrestlerById(p1.w1Id), b = getWrestlerById(p1.w2Id), c = getWrestlerById(p2.w1Id), d = getWrestlerById(p2.w2Id);
+                const combos = [
+                  [[a, c], [b, d]],
+                  [[a, d], [b, c]]
+                ];
+                const currentScore = p1.score + p2.score;
+                let best = { score: currentScore, variant: null, tie: null };
+                combos.forEach(v => {
+                  const s1 = scorePair(v[0][0], v[0][1], roundNum, priorPairs);
+                  const s2 = scorePair(v[1][0], v[1][1], roundNum, priorPairs);
+                  if (!s1.valid || !s2.valid) return;
+                  const score = s1.score + s2.score;
+                  const tie = [
+                    ...tieVector(v[0][0], v[0][1], s1.metrics),
+                    ...tieVector(v[1][0], v[1][1], s2.metrics)
+                  ];
+                  if (score < best.score || (score === best.score && (!best.tie || compareLex(tie, best.tie) < 0))) {
+                    best = { score, variant: { s1, s2, v }, tie };
+                  }
+                });
+                if (best.variant) {
+                  pairs[i] = { w1Id: best.variant.v[0][0].id, w2Id: best.variant.v[0][1].id, score: best.variant.s1.score, metrics: best.variant.s1.metrics };
+                  pairs[j] = { w1Id: best.variant.v[1][0].id, w2Id: best.variant.v[1][1].id, score: best.variant.s2.score, metrics: best.variant.s2.metrics };
+                  improved = true;
+                }
+              }
+            }
+          }
+        }
+
+        const unmatchedIds = available.filter(w => !pairs.some(p => p.w1Id === w.id || p.w2Id === w.id)).map(w => w.id);
+        const matchupRecords = pairs.map((p, idx) => makeMatchupRecord(roundNum, idx + 1, p.w1Id, p.w2Id, false, false));
+        const unmatched = unmatchedIds.map(id => buildUnmatchedEntry(id, roundNum));
+
+        return {
+          roundNumber: roundNum,
+          generatedAt: new Date().toISOString(),
+          matchups: lockedMatchups.concat(matchupRecords).sort((x, y) => avgWeight(x) - avgWeight(y)),
+          unmatched
+        };
+      }
+
+      function qualityFromMetrics(m) {
+        const flags = [];
+        if (m.sameSchool) flags.push("Same-school");
+        if (m.overPref) flags.push("Weight over preferred");
+        if (m.overAbs) flags.push("Weight over absolute");
+        if (m.beginnerVsAdvanced) flags.push("Beginner vs Advanced");
+        if (m.gradeDiff > 2) flags.push("Grade gap > 2");
+        if (m.rematch) flags.push("Rematch");
+
+        let quality = "Excellent";
+        if (flags.length === 0 && m.absDiff <= state.settings.preferredMaxLb && m.expDiff === 0 && m.gradeDiff <= 1 && !m.sameSchool) {
+          quality = "Excellent";
+        } else if (!m.overAbs && !m.beginnerVsAdvanced && m.gradeDiff <= 2) {
+          quality = m.overPref || m.sameSchool || m.expDiff > 0 ? "Good" : "Excellent";
+        } else if (!m.overAbs) {
+          quality = "Acceptable";
+        } else {
+          quality = "Review recommended";
+        }
+        if (flags.length >= 2 && quality === "Good") quality = "Acceptable";
+        if (flags.includes("Weight over absolute") || flags.includes("Beginner vs Advanced") || flags.includes("Grade gap > 2")) quality = "Review recommended";
+
+        const parts = [];
+        parts.push(m.sameSchool ? "Same school" : "Different schools");
+        parts.push(m.absDiff.toFixed(1) + " lb difference");
+        parts.push(m.expDiff === 0 ? "same experience" : (m.beginnerVsAdvanced ? "Beginner versus Advanced" : "one-level experience gap"));
+        if (m.gradeDiff === 0) parts.push("same grade");
+        else if (m.gradeDiff === 1) parts.push("one grade apart");
+        else parts.push(m.gradeDiff + " grades apart");
+
+        return { quality, flags, explanation: parts.join(", ") };
+      }
+
+      function makeMatchupRecord(roundNum, boutNum, w1Id, w2Id, locked, manual) {
+        const w1 = getWrestlerById(w1Id);
+        const w2 = getWrestlerById(w2Id);
+        const priorPairs = getPairHistoryBeforeRound(roundNum);
+        const scored = scorePair(w1, w2, roundNum, priorPairs);
+        const metrics = scored.metrics;
+        const q = qualityFromMetrics(metrics);
+        return {
+          id: makeId("m"),
+          round: roundNum,
+          bout: boutNum,
+          w1Id,
+          w2Id,
+          locked: !!locked,
+          manual: !!manual,
+          notes: "",
+          score: scored.score,
+          metrics,
+          quality: q.quality,
+          flags: q.flags,
+          explanation: q.explanation
+        };
+      }
+
+      function avgWeight(m) {
+        const w1 = getWrestlerById(m.w1Id);
+        const w2 = getWrestlerById(m.w2Id);
+        return (w1.weight + w2.weight) / 2;
+      }
+
+      function buildUnmatchedEntry(wrestlerId, roundNum) {
+        const w = getWrestlerById(wrestlerId);
+        const assigned = new Set();
+        const round = state.rounds.find(r => r.roundNumber === roundNum);
+        if (round) {
+          round.matchups.forEach(m => { assigned.add(m.w1Id); assigned.add(m.w2Id); });
+        }
+        const priorPairs = getPairHistoryBeforeRound(roundNum);
+        const candidates = state.wrestlers.filter(o => o.id !== wrestlerId).map(o => {
+          const s = scorePair(w, o, roundNum, priorPairs);
+          return { opponentId: o.id, valid: s.valid, score: s.score, metrics: s.metrics };
+        }).sort((a, b) => a.score - b.score).slice(0, 3);
+
+        const desired = w.desiredMatches == null ? state.settings.defaultDesiredMatches : w.desiredMatches;
+        const priorMatches = getMatchCountBeforeRound(w.id, roundNum);
+        const reason = priorMatches >= desired
+          ? "Already reached desired match count before this round."
+          : (candidates.length === 0
+          ? "No available opponents."
+          : "No remaining compatible opponent without creating duplicate assignment.");
+        return { wrestlerId, reason, suggestions: candidates };
+      }
+
+      function clearGeneratedBecauseRosterChanged() {
+        state.rounds = [];
+        state.originalGeneratedRounds = null;
+        state.generatedAt = null;
+        state.undoStack = [];
+      }
+
+      function generateAllRounds() {
+        if (state.wrestlers.length < 2) {
+          setStatus("Add at least two wrestlers to generate matchups.", "warn");
+          return;
+        }
+        readSettingsFromUi();
+        if (state.settings.schoolMode === "specific-pair" && (!normText(state.settings.teamA) || !normText(state.settings.teamB))) {
+          setStatus("Set both specific teams/schools before generating in specific-pair mode.", "warn");
+          return;
+        }
+        state.rounds = [];
+        const targetRounds = Math.max(1, Math.min(12, Number(state.settings.rounds || 1)));
+        for (let r = 1; r <= targetRounds; r++) {
+          state.rounds.push(buildRound(r, []));
+        }
+        state.rounds.forEach(r => {
+          r.matchups.sort((a, b) => avgWeight(a) - avgWeight(b));
+          r.matchups.forEach((m, idx) => { m.bout = idx + 1; });
+        });
+        state.generatedAt = new Date().toISOString();
+        state.originalGeneratedRounds = JSON.parse(JSON.stringify(state.rounds));
+        state.undoStack = [];
+        renderAll();
+        saveState();
+        setStatus("Generated " + state.rounds.length + " round(s).", "ok");
+      }
+
+      function generateRound(roundNum, opts) {
+        if (roundNum < 1) return;
+        readSettingsFromUi();
+        while (state.rounds.length < roundNum) {
+          state.rounds.push({ roundNumber: state.rounds.length + 1, generatedAt: new Date().toISOString(), matchups: [], unmatched: [] });
+        }
+        const existing = state.rounds.find(r => r.roundNumber === roundNum);
+        const locked = opts.preserveLocked ? existing.matchups.filter(m => m.locked) : [];
+        const generated = buildRound(roundNum, locked);
+        const idx = state.rounds.findIndex(r => r.roundNumber === roundNum);
+        state.rounds[idx] = generated;
+        state.rounds[idx].matchups.sort((a, b) => avgWeight(a) - avgWeight(b));
+        state.rounds[idx].matchups.forEach((m, i) => m.bout = i + 1);
+        if (!state.originalGeneratedRounds) state.originalGeneratedRounds = JSON.parse(JSON.stringify(state.rounds));
+        saveState();
+        renderAll();
+        setStatus("Round " + roundNum + " generated.", "ok");
+      }
+
+      function regenerateUnmatchedOnly(roundNum) {
+        const round = state.rounds.find(r => r.roundNumber === roundNum);
+        if (!round) {
+          setStatus("Generate round " + roundNum + " first.", "warn");
+          return;
+        }
+        const ids = round.unmatched.map(u => u.wrestlerId);
+        if (ids.length < 2) {
+          setStatus("Not enough unmatched wrestlers to generate additional pairs.", "warn");
+          return;
+        }
+        const priorPairs = getPairHistoryBeforeRound(roundNum);
+        const tempWrestlers = ids.map(getWrestlerById);
+        const candidates = [];
+        for (let i = 0; i < tempWrestlers.length; i++) {
+          for (let j = i + 1; j < tempWrestlers.length; j++) {
+            const a = tempWrestlers[i], b = tempWrestlers[j];
+            const s = scorePair(a, b, roundNum, priorPairs);
+            if (!s.valid) continue;
+            candidates.push({ a: a.id, b: b.id, score: s.score });
+          }
+        }
+        candidates.sort((x, y) => x.score - y.score);
+        const used = new Set();
+        const newMatchups = [];
+        candidates.forEach(c => {
+          if (used.has(c.a) || used.has(c.b)) return;
+          used.add(c.a); used.add(c.b);
+          newMatchups.push(makeMatchupRecord(roundNum, 0, c.a, c.b, false, true));
+        });
+        round.matchups = round.matchups.concat(newMatchups);
+        round.matchups.sort((a, b) => avgWeight(a) - avgWeight(b));
+        round.matchups.forEach((m, i) => m.bout = i + 1);
+        const stillUnmatchedIds = ids.filter(id => !used.has(id));
+        round.unmatched = stillUnmatchedIds.map(id => buildUnmatchedEntry(id, roundNum));
+        pushUndo("regenerate unmatched only");
+        saveState();
+        renderAll();
+        setStatus("Regenerated unmatched wrestlers for round " + roundNum + ".", "ok");
+      }
+
+      function pushUndo(reason) {
+        state.undoStack.push({
+          reason,
+          rounds: JSON.parse(JSON.stringify(state.rounds))
+        });
+        if (state.undoStack.length > 30) state.undoStack.shift();
+      }
+
+      function undoLastAdjustment() {
+        if (!state.undoStack.length) {
+          setStatus("No adjustment to undo.", "warn");
+          return;
+        }
+        const item = state.undoStack.pop();
+        state.rounds = item.rounds;
+        saveState();
+        renderAll();
+        setStatus("Undo applied: " + item.reason + ".", "ok");
+      }
+
+      function resetToOriginalGenerated() {
+        if (!state.originalGeneratedRounds) {
+          setStatus("No original generated baseline found.", "warn");
+          return;
+        }
+        state.rounds = JSON.parse(JSON.stringify(state.originalGeneratedRounds));
+        state.undoStack = [];
+        saveState();
+        renderAll();
+        setStatus("Reset to original generated results.", "ok");
+      }
+
+      function renumberBouts(roundNum) {
+        const round = state.rounds.find(r => r.roundNumber === roundNum);
+        if (!round) return;
+        const displayed = getFilteredMatchups().filter(m => m.round === roundNum);
+        if (!displayed.length) {
+          setStatus("No displayed matchups for round " + roundNum + ".", "warn");
+          return;
+        }
+        pushUndo("renumber bouts");
+        const idToBout = new Map(displayed.map((m, i) => [m.id, i + 1]));
+        round.matchups.forEach(m => {
+          if (idToBout.has(m.id)) m.bout = idToBout.get(m.id);
+        });
+        round.matchups.sort((a, b) => a.bout - b.bout);
+        saveState();
+        renderAll();
+        setStatus("Bout numbers updated from current display order for round " + roundNum + ".", "ok");
+      }
+
+      function findRoundByNum(n) {
+        return state.rounds.find(r => r.roundNumber === n);
+      }
+
+      function ensureNoDuplicateAssignment(round) {
+        const ids = [];
+        round.matchups.forEach(m => { ids.push(m.w1Id, m.w2Id); });
+        const set = new Set(ids);
+        return set.size === ids.length;
+      }
+
+      function performSwapOpponents() {
+        const roundNum = Number($("#swapRound").value || 1);
+        const round = findRoundByNum(roundNum);
+        if (!round) { setStatus("Round not found.", "error"); return; }
+        const aId = normText($("#swapASelect").value);
+        const bId = normText($("#swapBSelect").value);
+        const mA = round.matchups.find(m => m.id === aId);
+        const mB = round.matchups.find(m => m.id === bId);
+        if (!mA || !mB || mA.id === mB.id) { setStatus("Provide two different valid matchup IDs.", "error"); return; }
+        pushUndo("swap opponents");
+        const temp = mA.w2Id;
+        mA.w2Id = mB.w2Id;
+        mB.w2Id = temp;
+        recomputeRound(roundNum);
+        if (!ensureNoDuplicateAssignment(round)) {
+          undoLastAdjustment();
+          setStatus("Swap would create duplicate assignment; action canceled.", "error");
+          return;
+        }
+        saveState();
+        renderAll();
+        setStatus("Opponents swapped in round " + roundNum + ".", "ok");
+      }
+
+      function performManualCreate() {
+        const roundNum = Number($("#manRound").value || 1);
+        const round = findRoundByNum(roundNum);
+        if (!round) { setStatus("Round not found.", "error"); return; }
+        const w1 = normText($("#manW1Select").value);
+        const w2 = normText($("#manW2Select").value);
+        if (!w1 || !w2 || w1 === w2) { setStatus("Enter two different wrestler IDs.", "error"); return; }
+        const assigned = new Set(round.matchups.flatMap(m => [m.w1Id, m.w2Id]));
+        if (assigned.has(w1) || assigned.has(w2)) {
+          setStatus("Manual create failed: one wrestler is already assigned in this round.", "error");
+          return;
+        }
+        if (!getWrestlerById(w1) || !getWrestlerById(w2)) {
+          setStatus("Invalid wrestler ID.", "error");
+          return;
+        }
+        pushUndo("manual create matchup");
+        const m = makeMatchupRecord(roundNum, 0, w1, w2, false, true);
+        round.matchups.push(m);
+        recomputeRound(roundNum);
+        saveState();
+        renderAll();
+        setStatus("Manual matchup created.", "ok");
+      }
+
+      function performReplaceSide() {
+        const roundNum = Number($("#repRound").value || 1);
+        const round = findRoundByNum(roundNum);
+        if (!round) { setStatus("Round not found.", "error"); return; }
+        const matchId = normText($("#repMatchSelect").value);
+        const side = $("#repSide").value;
+        const replacement = normText($("#repWithWrestlerSelect").value);
+        const matchup = round.matchups.find(m => m.id === matchId);
+        if (!matchup) { setStatus("Matchup ID not found.", "error"); return; }
+        if (!getWrestlerById(replacement)) {
+          setStatus("Replacement wrestler ID is invalid.", "error");
+          return;
+        }
+        const sideKey = side === "w1" ? "w1Id" : "w2Id";
+        const otherSideKey = side === "w1" ? "w2Id" : "w1Id";
+        const currentId = matchup[sideKey];
+        if (replacement === matchup[otherSideKey]) {
+          setStatus("Replacement wrestler is already on the opposite side of this matchup.", "error");
+          return;
+        }
+        if (replacement === currentId) {
+          setStatus("Selected wrestler is already on that side of this matchup.", "warn");
+          return;
+        }
+
+        pushUndo("replace side");
+        const otherMatch = round.matchups.find(m => m.id !== matchup.id && (m.w1Id === replacement || m.w2Id === replacement));
+        matchup[sideKey] = replacement;
+        if (otherMatch) {
+          if (otherMatch.w1Id === replacement) otherMatch.w1Id = currentId;
+          else otherMatch.w2Id = currentId;
+        }
+        recomputeRound(roundNum);
+        saveState();
+        renderAll();
+        setStatus(otherMatch ? "Replaced wrestler and swapped assignment with existing matched wrestler." : "Replaced wrestler in matchup.", "ok");
+      }
+
+      function recomputeRound(roundNum) {
+        const round = findRoundByNum(roundNum);
+        if (!round) return;
+        round.matchups.forEach((m, idx) => {
+          const rebuilt = makeMatchupRecord(roundNum, idx + 1, m.w1Id, m.w2Id, m.locked, m.manual);
+          m.metrics = rebuilt.metrics;
+          m.score = rebuilt.score;
+          m.quality = rebuilt.quality;
+          m.flags = rebuilt.flags;
+          m.explanation = rebuilt.explanation;
+        });
+        round.matchups.sort((a, b) => avgWeight(a) - avgWeight(b));
+        round.matchups.forEach((m, i) => m.bout = i + 1);
+        const matched = new Set(round.matchups.flatMap(m => [m.w1Id, m.w2Id]));
+        round.unmatched = state.wrestlers.filter(w => !matched.has(w.id)).map(w => buildUnmatchedEntry(w.id, roundNum));
+      }
+
+      function bindMatchFilters() {
+        const bind = [
+          ["mfSearch", "search"], ["mfRound", "round"], ["mfQuality", "quality"],
+          ["mfSchoolFilter", "school"], ["mfSameSchool", "sameSchool"], ["mfFlagOnly", "flagOnly"], ["mfSort", "sort"]
+        ];
+        bind.forEach(([id, key]) => {
+          $("#" + id).addEventListener("input", e => {
+            state.matchupFilters[key] = e.target.value;
+            renderMatchups();
+            saveState();
+          });
+          $("#" + id).addEventListener("change", e => {
+            state.matchupFilters[key] = e.target.value;
+            renderMatchups();
+            saveState();
+          });
+        });
+        $("#btnResetMatchFilters").addEventListener("click", () => {
+          state.matchupFilters = { search: "", round: "", quality: "", school: "", sameSchool: "", flagOnly: "", sort: "avgWeightAsc" };
+          syncUiFromState();
+          renderMatchups();
+        });
+      }
+
+      function getRound1MatchedSet() {
+        const r1 = state.rounds.find(r => r.roundNumber === 1);
+        const set = new Set();
+        if (!r1) return set;
+        r1.matchups.forEach(m => { set.add(m.w1Id); set.add(m.w2Id); });
+        return set;
+      }
+
+      function filteredRoster() {
+        const f = state.rosterFilters;
+        const matchedSet = getRound1MatchedSet();
+        return state.wrestlers.filter(w => {
+          const full = (w.firstName + " " + w.lastName).toLowerCase();
+          if (f.name && !full.includes(canon(f.name))) return false;
+          if (f.school && !canon(w.school).includes(canon(f.school))) return false;
+          if (f.exp && w.experience !== f.exp) return false;
+          if (f.grade) {
+            const g = normalizeGrade(f.grade);
+            if (!g || w.gradeNorm !== g.norm) return false;
+          }
+          if (f.minWt !== "" && w.weight < Number(f.minWt)) return false;
+          if (f.maxWt !== "" && w.weight > Number(f.maxWt)) return false;
+          if (f.matched === "matched" && !matchedSet.has(w.id)) return false;
+          if (f.matched === "unmatched" && matchedSet.has(w.id)) return false;
+          return true;
+        }).sort((a, b) => {
+          const f = state.rosterSort.field;
+          const d = state.rosterSort.dir === "asc" ? 1 : -1;
+          const av = a[f], bv = b[f];
+          if (typeof av === "number" && typeof bv === "number") return d * (av - bv);
+          return d * String(av).localeCompare(String(bv));
+        });
+      }
+
+      function renderRoster() {
+        const body = $("#rosterTable tbody");
+        const rows = filteredRoster();
+        body.innerHTML = "";
+        rows.forEach(w => {
+          const tr = document.createElement("tr");
+          if (state.selectedWrestlerId === w.id) tr.style.background = "var(--cp-accent-soft)";
+          tr.innerHTML = [
+            '<td class="no-print center"><input type="radio" name="rosterSelect" value="' + w.id + '"' + (state.selectedWrestlerId === w.id ? " checked" : "") + "></td>",
+            "<td>" + csvEscape(w.firstName) + "</td>",
+            "<td>" + csvEscape(w.lastName) + "</td>",
+            "<td>" + w.weight.toFixed(1) + "</td>",
+            "<td>" + csvEscape(w.gradeLabel) + "</td>",
+            "<td>" + csvEscape(w.experience) + "</td>",
+            "<td>" + csvEscape(w.school) + "</td>",
+            "<td><input type='number' min='0' max='30' data-desired-id='" + w.id + "' value='" + (w.desiredMatches == null ? state.settings.defaultDesiredMatches : w.desiredMatches) + "' style='width:5.5rem;'></td>",
+            "<td class='mono'>" + w.id + "</td>",
+            "<td class='no-print'><button data-roster-delete='" + w.id + "' class='danger'>Delete</button></td>"
+          ].join("");
+          body.appendChild(tr);
+        });
+        $all('input[name="rosterSelect"]').forEach(r => {
+          r.addEventListener("change", (e) => {
+            state.selectedWrestlerId = e.target.value;
+            const w = getWrestlerById(state.selectedWrestlerId);
+            if (w) fillManualForm(w);
+            renderRoster();
+          });
+        });
+        $all("input[data-desired-id]").forEach(inp => {
+          inp.addEventListener("change", () => {
+            const id = inp.dataset.desiredId;
+            const w = getWrestlerById(id);
+            if (!w) return;
+            const val = Math.max(0, Math.min(30, Math.floor(Number(inp.value || 0))));
+            w.desiredMatches = Number.isFinite(val) ? val : state.settings.defaultDesiredMatches;
+            clearGeneratedBecauseRosterChanged();
+            saveState();
+            renderAll();
+            setStatus("Updated desired match count for " + w.firstName + " " + w.lastName + ".", "ok");
+          });
+        });
+        $all("button[data-roster-delete]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const id = btn.dataset.rosterDelete;
+            const w = getWrestlerById(id);
+            if (!w) return;
+            if (!window.confirm("Delete " + w.firstName + " " + w.lastName + " from roster?")) return;
+            state.wrestlers = state.wrestlers.filter(x => x.id !== id);
+            if (state.selectedWrestlerId === id) state.selectedWrestlerId = null;
+            clearGeneratedBecauseRosterChanged();
+            saveState();
+            renderAll();
+            setStatus("Roster record deleted.", "ok");
+          });
+        });
+
+        const schoolCounts = {};
+        const expCounts = { Beginner: 0, Intermediate: 0, Advanced: 0 };
+        state.wrestlers.forEach(w => {
+          schoolCounts[w.school] = (schoolCounts[w.school] || 0) + 1;
+          expCounts[w.experience] = (expCounts[w.experience] || 0) + 1;
+        });
+        const r1Matched = getRound1MatchedSet();
+        const unmatched = state.wrestlers.filter(w => !r1Matched.has(w.id)).length;
+        $("#rosterCounts").innerHTML =
+          "<strong>Total:</strong> " + state.wrestlers.length +
+          " | <strong>By school:</strong> " + Object.entries(schoolCounts).map(x => csvEscape(x[0]) + " (" + x[1] + ")").join(", ") +
+          " | <strong>By experience:</strong> Beginner " + expCounts.Beginner + ", Intermediate " + expCounts.Intermediate + ", Advanced " + expCounts.Advanced +
+          " | <strong>Unmatched (round 1):</strong> " + unmatched;
+      }
+
+      function roundMatchupsFlat() {
+        const arr = [];
+        state.rounds.forEach(r => r.matchups.forEach(m => arr.push(m)));
+        return arr;
+      }
+
+      function qualityRank(q) {
+        return { "Excellent": 0, "Good": 1, "Acceptable": 2, "Review recommended": 3 }[q] || 9;
+      }
+
+      function getFilteredMatchups() {
+        const f = state.matchupFilters;
+        let data = roundMatchupsFlat().map(m => enrichMatchupView(m));
+        data = data.filter(r => {
+          const nameStr = (r.w1Name + " " + r.w2Name).toLowerCase();
+          if (f.search && !nameStr.includes(canon(f.search))) return false;
+          if (f.round && String(r.round) !== String(f.round)) return false;
+          if (f.quality && r.quality !== f.quality) return false;
+          if (f.school && !(canon(r.w1School).includes(canon(f.school)) || canon(r.w2School).includes(canon(f.school)))) return false;
+          if (f.sameSchool === "same" && !r.sameSchool) return false;
+          if (f.sameSchool === "diff" && r.sameSchool) return false;
+          if (f.flagOnly === "flagged" && r.flags.length === 0) return false;
+          if (f.flagOnly === "clean" && r.flags.length > 0) return false;
+          return true;
+        });
+        if (f.sort === "avgWeightAsc") data.sort((a, b) => a.avgWeight - b.avgWeight);
+        else if (f.sort === "avgWeightDesc") data.sort((a, b) => b.avgWeight - a.avgWeight);
+        else if (f.sort === "roundBout") data.sort((a, b) => (a.round - b.round) || (a.bout - b.bout));
+        else if (f.sort === "quality") data.sort((a, b) => qualityRank(a.quality) - qualityRank(b.quality) || a.avgWeight - b.avgWeight);
+        return data;
+      }
+
+      function enrichMatchupView(m) {
+        const w1 = getWrestlerById(m.w1Id), w2 = getWrestlerById(m.w2Id);
+        return {
+          id: m.id,
+          round: m.round,
+          bout: m.bout,
+          w1Id: w1.id,
+          w2Id: w2.id,
+          w1Name: w1.firstName + " " + w1.lastName,
+          w2Name: w2.firstName + " " + w2.lastName,
+          w1School: w1.school,
+          w2School: w2.school,
+          w1Weight: w1.weight,
+          w2Weight: w2.weight,
+          w1Grade: w1.gradeLabel,
+          w2Grade: w2.gradeLabel,
+          w1Exp: w1.experience,
+          w2Exp: w2.experience,
+          weightDiff: Math.abs(w1.weight - w2.weight),
+          pctDiff: m.metrics.pctDiff,
+          gradeDiff: Math.abs(w1.gradeNorm - w2.gradeNorm),
+          quality: m.quality,
+          flags: m.flags || [],
+          notes: m.notes || "",
+          score: m.score,
+          explanation: m.explanation || "",
+          sameSchool: canon(w1.school) === canon(w2.school),
+          locked: !!m.locked,
+          manual: !!m.manual,
+          avgWeight: (w1.weight + w2.weight) / 2
+        };
+      }
+
+      function renderMatchups() {
+        const tbody = $("#matchTable tbody");
+        tbody.innerHTML = "";
+        const rows = getFilteredMatchups();
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = [
+            "<td>" + r.round + "</td>",
+            "<td>" + r.bout + "</td>",
+            "<td>" + csvEscape(r.w1Name) + "<div class='mono small'>" + r.w1Id + "</div></td>",
+            "<td>" + csvEscape(r.w1School) + "</td>",
+            "<td>" + r.w1Weight.toFixed(1) + "</td>",
+            "<td>" + csvEscape(r.w1Grade) + "</td>",
+            "<td>" + csvEscape(r.w1Exp) + "</td>",
+            "<td>" + csvEscape(r.w2Name) + "<div class='mono small'>" + r.w2Id + "</div></td>",
+            "<td>" + csvEscape(r.w2School) + "</td>",
+            "<td>" + r.w2Weight.toFixed(1) + "</td>",
+            "<td>" + csvEscape(r.w2Grade) + "</td>",
+            "<td>" + csvEscape(r.w2Exp) + "</td>",
+            "<td>" + r.weightDiff.toFixed(1) + " lb<br><span class='small muted'>" + r.pctDiff.toFixed(1) + "%</span></td>",
+            "<td>" + r.gradeDiff + "</td>",
+            "<td><span class='pill badge-qual-" + canon(r.quality).replace(/[^a-z]/g, "") + "'>" + r.quality + "</span><div class='small muted'>" + csvEscape(r.explanation) + "</div></td>",
+            "<td>" + (r.flags.length ? r.flags.map(f => "<span class='pill warn'>" + csvEscape(f) + "</span>").join(" ") : "<span class='small muted'>None</span>") + "</td>",
+            "<td><textarea data-note='" + r.id + "' rows='2' style='width:100%;'>" + csvEscape(r.notes) + "</textarea></td>",
+            "<td class='no-print'>" +
+              "<div class='toolbar'>" +
+              "<button data-lock='" + r.id + "'>" + (r.locked ? "Unlock" : "Lock") + "</button>" +
+              "<button data-remove='" + r.id + "' class='danger'>Remove</button>" +
+              "<button data-to-unmatched='" + r.id + ":w1'>Move W1 unmatched</button>" +
+              "<button data-to-unmatched='" + r.id + ":w2'>Move W2 unmatched</button>" +
+              "</div>" +
+            "</td>"
+          ].join("");
+          tbody.appendChild(tr);
+        });
+
+        $all("textarea[data-note]").forEach(t => {
+          t.addEventListener("change", () => {
+            const id = t.dataset.note;
+            const m = roundMatchupsFlat().find(x => x.id === id);
+            if (!m) return;
+            pushUndo("update note");
+            m.notes = t.value;
+            saveState();
+            renderMatchups();
+          });
+        });
+
+        $all("button[data-lock]").forEach(b => b.addEventListener("click", () => {
+          const id = b.dataset.lock;
+          const m = roundMatchupsFlat().find(x => x.id === id);
+          if (!m) return;
+          pushUndo("lock toggle");
+          m.locked = !m.locked;
+          saveState();
+          renderMatchups();
+        }));
+
+        $all("button[data-remove]").forEach(b => b.addEventListener("click", () => {
+          const id = b.dataset.remove;
+          const m = roundMatchupsFlat().find(x => x.id === id);
+          if (!m) return;
+          if (!window.confirm("Remove matchup " + id + "?")) return;
+          pushUndo("remove matchup");
+          const round = findRoundByNum(m.round);
+          round.matchups = round.matchups.filter(x => x.id !== id);
+          recomputeRound(m.round);
+          saveState();
+          renderAll();
+        }));
+
+        $all("button[data-to-unmatched]").forEach(b => b.addEventListener("click", () => {
+          const parts = b.dataset.toUnmatched.split(":");
+          const id = parts[0], side = parts[1];
+          const m = roundMatchupsFlat().find(x => x.id === id);
+          if (!m) return;
+          pushUndo("move to unmatched");
+          const round = findRoundByNum(m.round);
+          const keepId = side === "w1" ? m.w2Id : m.w1Id;
+          round.matchups = round.matchups.filter(x => x.id !== id);
+          round.unmatched.push(buildUnmatchedEntry(side === "w1" ? m.w1Id : m.w2Id, m.round));
+          const currentMatched = new Set(round.matchups.flatMap(x => [x.w1Id, x.w2Id]));
+          if (!currentMatched.has(keepId)) round.unmatched.push(buildUnmatchedEntry(keepId, m.round));
+          recomputeRound(m.round);
+          saveState();
+          renderAll();
+        }));
+
+        renderSummaryKpis();
+        renderUnmatched();
+        updateRoundSelects();
+        refreshManualAdjustSelectors();
+        updatePrintMeta();
+      }
+
+      function renderUnmatched() {
+        const host = $("#unmatchedArea");
+        if (!state.rounds.length) {
+          host.innerHTML = '<div class="empty">No rounds generated yet.</div>';
+          return;
+        }
+        let html = "";
+        state.rounds.forEach(r => {
+          html += "<h4>Round " + r.roundNumber + " (" + r.unmatched.length + " unmatched)</h4>";
+          if (!r.unmatched.length) {
+            html += '<div class="small muted">None.</div>';
+            return;
+          }
+          html += '<div class="table-wrap" style="max-height:240px;"><table><thead><tr><th>Wrestler</th><th>Reason</th><th>Suggestions (top 3 closest)</th></tr></thead><tbody>';
+          r.unmatched.forEach(u => {
+            const w = getWrestlerById(u.wrestlerId);
+            let sugg = "";
+            if (!u.suggestions.length) {
+              sugg = "No alternatives";
+            } else {
+              sugg = u.suggestions.map((s, idx) => {
+                const o = getWrestlerById(s.opponentId);
+                const m = s.metrics;
+                const t = (idx + 1) + ". " + o.firstName + " " + o.lastName + " (" + o.school + "), " + m.absDiff.toFixed(1) + " lb, " + m.pctDiff.toFixed(1) + "%, exp gap " + m.expDiff + ", grade gap " + m.gradeDiff + (m.sameSchool ? ", same school" : "");
+                return "<div>" + csvEscape(t) + "</div>";
+              }).join("");
+            }
+            html += "<tr>";
+            html += "<td>" + csvEscape(w.firstName + " " + w.lastName) + "<div class='mono small'>" + w.id + "</div></td>";
+            html += "<td>" + csvEscape(u.reason) + "</td>";
+            html += "<td class='small'>" + sugg + "</td>";
+            html += "</tr>";
+          });
+          html += "</tbody></table></div>";
+        });
+        host.innerHTML = html;
+      }
+
+      function renderSummaryKpis() {
+        const flat = roundMatchupsFlat().map(enrichMatchupView);
+        const representedSchools = new Set(state.wrestlers.map(w => w.school));
+        const unmatched = state.rounds.reduce((sum, r) => sum + r.unmatched.length, 0);
+        const sameSchool = flat.filter(m => m.sameSchool).length;
+        const overPreferred = flat.filter(m => m.flags.includes("Weight over preferred")).length;
+        const gradeGt2 = flat.filter(m => m.flags.includes("Grade gap > 2")).length;
+        const bva = flat.filter(m => m.flags.includes("Beginner vs Advanced")).length;
+        const rematch = flat.filter(m => m.flags.includes("Rematch")).length;
+
+        const cards = [
+          ["Total wrestlers", state.wrestlers.length, () => {}],
+          ["Participating schools", representedSchools.size, () => {}],
+          ["Generated matchups", flat.length, () => {}],
+          ["Unmatched wrestlers", unmatched, () => {
+            state.matchupFilters.flagOnly = "";
+            renderMatchups();
+            setStatus("See unmatched section below for details.", "ok");
+          }],
+          ["Same-school matchups", sameSchool, () => {
+            state.matchupFilters.sameSchool = "same"; syncUiFromState(); renderMatchups();
+          }],
+          ["Over preferred weight", overPreferred, () => {
+            state.matchupFilters.flagOnly = "flagged"; syncUiFromState(); renderMatchups();
+          }],
+          ["Grade gap > 2", gradeGt2, () => {
+            state.matchupFilters.flagOnly = "flagged"; syncUiFromState(); renderMatchups();
+          }],
+          ["Beginner vs Advanced", bva, () => {
+            state.matchupFilters.flagOnly = "flagged"; syncUiFromState(); renderMatchups();
+          }],
+          ["Rematches", rematch, () => {
+            state.matchupFilters.flagOnly = "flagged"; syncUiFromState(); renderMatchups();
+          }]
+        ];
+        const host = $("#summaryKpis");
+        host.innerHTML = "";
+        cards.forEach(c => {
+          const btn = document.createElement("button");
+          btn.className = "kpi";
+          btn.innerHTML = '<div class="n">' + c[1] + '</div><div class="small">' + c[0] + "</div>";
+          btn.addEventListener("click", c[2]);
+          host.appendChild(btn);
+        });
+      }
+
+      function updateRoundSelects() {
+        const rounds = state.rounds.map(r => r.roundNumber).sort((a, b) => a - b);
+        const sel = $("#mfRound");
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All</option>' + rounds.map(n => '<option value="' + n + '">Round ' + n + "</option>").join("");
+        if (rounds.includes(Number(cur))) sel.value = cur;
+      }
+
+      function updatePrintMeta() {
+        const schools = Array.from(new Set(state.wrestlers.map(w => w.school))).sort();
+        const dt = state.generatedAt ? new Date(state.generatedAt) : new Date();
+        const title = state.eventInfo.name ? state.eventInfo.name + " - Matchup Report" : "Wrestling Matchup Report";
+        $("#printTitle").textContent = title;
+        $("#printMeta").innerHTML = [
+          "<strong>Generated:</strong> " + dt.toLocaleString(),
+          state.eventInfo.date ? "<strong>Event date:</strong> " + state.eventInfo.date : "",
+          state.eventInfo.location ? "<strong>Location:</strong> " + csvEscape(state.eventInfo.location) : "",
+          "<strong>Schools:</strong> " + (schools.length ? schools.map(csvEscape).join(", ") : "None"),
+          "<strong>Settings:</strong> preferred " + state.settings.preferredMaxLb + " lb, absolute " + state.settings.absoluteMaxLb + " lb, preferred " + state.settings.preferredMaxPct + "%, allow exceptions " + (state.settings.allowExceptions ? "Yes" : "No") + ", allow same-school " + (state.settings.allowSameSchool ? "Yes" : "No") + ", school mode " + (state.settings.schoolMode || "prefer-different") + ", default desired matches " + (state.settings.defaultDesiredMatches == null ? 1 : state.settings.defaultDesiredMatches)
+        ].filter(Boolean).join(" | ");
+        renderPrintReportBody();
+      }
+
+      function renderPrintReportBody() {
+        const host = $("#printReportBody");
+        if (!state.rounds.length) {
+          host.innerHTML = "<div>No matchups generated yet.</div>";
+          return;
+        }
+        let html = "";
+        state.rounds.forEach(round => {
+          const sorted = round.matchups.slice().sort((a, b) => avgWeight(a) - avgWeight(b));
+          html += "<h3>Round " + round.roundNumber + " Matchups</h3>";
+          if (!sorted.length) {
+            html += "<div>None.</div>";
+          } else {
+            html += '<table><thead><tr><th>Bout</th><th>Wrestler 1</th><th>School</th><th>Wt</th><th>Wrestler 2</th><th>School</th><th>Wt</th><th>Diff</th><th>Matchup Effectiveness</th><th>Flags</th><th>Notes</th></tr></thead><tbody>';
+            sorted.forEach(m => {
+              const r = enrichMatchupView(m);
+              html += "<tr>";
+              html += "<td>" + r.bout + "</td>";
+              html += "<td>" + csvEscape(r.w1Name) + "</td>";
+              html += "<td>" + csvEscape(r.w1School) + "</td>";
+              html += "<td>" + r.w1Weight.toFixed(1) + "</td>";
+              html += "<td>" + csvEscape(r.w2Name) + "</td>";
+              html += "<td>" + csvEscape(r.w2School) + "</td>";
+              html += "<td>" + r.w2Weight.toFixed(1) + "</td>";
+              html += "<td>" + r.weightDiff.toFixed(1) + " lb (" + r.pctDiff.toFixed(1) + "%)</td>";
+              html += "<td>" + csvEscape(r.quality) + "</td>";
+              html += "<td>" + csvEscape(r.flags.join("; ")) + "</td>";
+              html += "<td>" + csvEscape(r.notes || "") + "</td>";
+              html += "</tr>";
+            });
+            html += "</tbody></table>";
+          }
+          html += "<h3>Round " + round.roundNumber + " Unmatched Wrestlers</h3>";
+          if (!round.unmatched.length) {
+            html += "<div>None.</div>";
+          } else {
+            html += '<table><thead><tr><th>Wrestler</th><th>School</th><th>Weight</th><th>Reason</th><th>Suggested opponents</th></tr></thead><tbody>';
+            round.unmatched.forEach(u => {
+              const w = getWrestlerById(u.wrestlerId);
+              if (!w) return;
+              const sugg = (u.suggestions || []).map(s => {
+                const o = getWrestlerById(s.opponentId);
+                if (!o) return "";
+                return o.firstName + " " + o.lastName + " (" + o.school + ", " + s.metrics.absDiff.toFixed(1) + " lb)";
+              }).filter(Boolean).join(" | ");
+              html += "<tr>";
+              html += "<td>" + csvEscape(w.firstName + " " + w.lastName) + "</td>";
+              html += "<td>" + csvEscape(w.school) + "</td>";
+              html += "<td>" + w.weight.toFixed(1) + "</td>";
+              html += "<td>" + csvEscape(u.reason || "") + "</td>";
+              html += "<td>" + csvEscape(sugg) + "</td>";
+              html += "</tr>";
+            });
+            html += "</tbody></table>";
+          }
+        });
+        host.innerHTML = html;
+      }
+
+      function exportCsv() {
+        const scope = $("#exportScope").value;
+        const roundNum = Math.max(1, Number($("#exportRound").value || 1));
+        let rows = [];
+        let filename = "wrestling-matchups";
+
+        if (scope === "roster") {
+          filename = "wrestler-roster";
+          rows = [["id", "firstName", "lastName", "weight", "gradeLabel", "gradeNorm", "experience", "school", "desiredMatches"]]
+            .concat(state.wrestlers.map(w => [w.id, w.firstName, w.lastName, w.weight.toFixed(1), w.gradeLabel, w.gradeNorm, w.experience, w.school, w.desiredMatches == null ? state.settings.defaultDesiredMatches : w.desiredMatches]));
+        } else if (scope === "unmatched") {
+          filename = "unmatched-wrestlers";
+          rows = [["round", "wrestlerId", "name", "school", "weight", "grade", "experience", "reason", "suggestions"]];
+          state.rounds.forEach(r => {
+            r.unmatched.forEach(u => {
+              const w = getWrestlerById(u.wrestlerId);
+              const s = u.suggestions.map((x, idx) => {
+                const o = getWrestlerById(x.opponentId);
+                return (idx + 1) + ":" + o.id + " " + o.firstName + " " + o.lastName + " (" + x.metrics.absDiff.toFixed(1) + " lb)";
+              }).join(" | ");
+              rows.push([r.roundNumber, w.id, w.firstName + " " + w.lastName, w.school, w.weight.toFixed(1), w.gradeLabel, w.experience, u.reason, s]);
+            });
+          });
+        } else {
+          let data;
+          if (scope === "all") {
+            data = roundMatchupsFlat().map(enrichMatchupView);
+            filename = "all-matchups";
+          } else if (scope === "current") {
+            data = roundMatchupsFlat().map(enrichMatchupView).filter(m => m.round === roundNum);
+            filename = "round-" + roundNum + "-matchups";
+          } else {
+            data = getFilteredMatchups();
+            filename = "filtered-matchups";
+          }
+          rows = [[
+            "round", "bout", "matchupId", "w1Id", "w1Name", "w1School", "w1Weight", "w1Grade", "w1Experience",
+            "w2Id", "w2Name", "w2School", "w2Weight", "w2Grade", "w2Experience",
+            "weightDiffLb", "weightDiffPct", "gradeDiff", "sameSchool", "quality", "matchQualityScore",
+            "explanation", "reviewFlags", "coachNotes", "locked", "manual"
+          ]];
+          data.forEach(m => {
+            rows.push([
+              m.round, m.bout, m.id, m.w1Id, m.w1Name, m.w1School, m.w1Weight.toFixed(1), m.w1Grade, m.w1Exp,
+              m.w2Id, m.w2Name, m.w2School, m.w2Weight.toFixed(1), m.w2Grade, m.w2Exp,
+              m.weightDiff.toFixed(2), m.pctDiff.toFixed(2), m.gradeDiff, m.sameSchool ? "Yes" : "No", m.quality, m.score,
+              m.explanation, m.flags.join("; "), m.notes, m.locked ? "Yes" : "No", m.manual ? "Yes" : "No"
+            ]);
+          });
+        }
+        const csv = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+        downloadTextFile(csv, filename + ".csv", "text/csv");
+        setStatus("CSV exported: " + filename + ".csv", "ok");
+      }
+
+      function downloadTextFile(text, filename, mime) {
+        const blob = new Blob([text], { type: mime || "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function bindExport() {
+        $("#btnExportCsv").addEventListener("click", exportCsv);
+      }
+
+      function bindRowActionsShortcuts() {
+        document.addEventListener("keydown", (e) => {
+          if (e.ctrlKey && e.key.toLowerCase() === "s") {
+            e.preventDefault();
+            saveState();
+            setStatus("Saved snapshot.", "ok");
+          }
+        });
+      }
+
+      function renderAll() {
+        renderImportPreview();
+        renderRoster();
+        renderMatchups();
+        updatePrintMeta();
+        refreshManualAdjustSelectors();
+      }
+
+      function runLightSelfChecks() {
+        const errs = [];
+        function check(name, fn) {
+          try {
+            if (!fn()) errs.push(name);
+          } catch (err) {
+            errs.push(name);
+          }
+        }
+        check("grade normalization", () => normalizeGrade("K").norm === 0 && normalizeGrade("12th").norm === 12);
+        check("experience normalization", () => normalizeExperience("beginner") === "Beginner" && normalizeExperience("ADV") === "Advanced");
+        check("csv quoted parsing", () => {
+          const r = parseCsv('a,b,"Central, Academy"\n1,2,3');
+          return r[1][2] === "3" && r[0][2] === "Central, Academy";
+        });
+        check("positive weight", () => parsePositiveWeight("72.4") === 72.4 && parsePositiveWeight("-1") == null);
+        if (errs.length) setStatus("Startup checks found issues: " + errs.join(", "), "warn");
+      }
+
+      function hydrateFromDefaultsIfNeeded() {
+        if (!state.rosterSort) state.rosterSort = { field: "weight", dir: "asc" };
+        if (!state.rosterFilters) state.rosterFilters = { name: "", school: "", exp: "", grade: "", minWt: "", maxWt: "", matched: "all" };
+        if (!state.matchupFilters) state.matchupFilters = { search: "", round: "", quality: "", school: "", sameSchool: "", flagOnly: "", sort: "avgWeightAsc" };
+        if (!state.settings) state.settings = {};
+        if (state.settings.schoolMode == null) state.settings.schoolMode = "prefer-different";
+        if (state.settings.teamA == null) state.settings.teamA = "";
+        if (state.settings.teamB == null) state.settings.teamB = "";
+        if (state.settings.defaultDesiredMatches == null) state.settings.defaultDesiredMatches = 1;
+        state.wrestlers.forEach(w => {
+          if (w.experience === "Experienced") w.experience = "Intermediate";
+          if (w.desiredMatches == null || !Number.isFinite(Number(w.desiredMatches))) w.desiredMatches = state.settings.defaultDesiredMatches;
+          w.desiredMatches = Math.max(0, Math.min(30, Math.floor(Number(w.desiredMatches))));
+        });
+      }
+
+      function start() {
+        loadState();
+        hydrateFromDefaultsIfNeeded();
+        initTabs();
+        bindGlobalButtons();
+        bindEventSetup();
+        bindSettings();
+        bindRosterFilters();
+        bindManualEntry();
+        bindImport();
+        bindMatchControls();
+        bindMatchFilters();
+        bindExport();
+        bindRowActionsShortcuts();
+        syncUiFromState();
+        renderAll();
+        runLightSelfChecks();
+      }
+
+      start();
+    })();
+  </script>
+</body>
+</html>
