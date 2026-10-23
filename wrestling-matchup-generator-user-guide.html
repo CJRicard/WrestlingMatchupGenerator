@@ -131,6 +131,10 @@
         <li>Generate matchups, review flags, and make manual adjustments if needed.</li>
         <li>Export final results on the last tab.</li>
       </ol>
+      <div class="callout">
+        <strong>Companion roster tool:</strong> If you need to build an initial roster from scratch, use
+        <code>wrestling-roster-builder.html</code> first. It is a separate tool that creates CSV files in the import format expected by this matchup generator.
+      </div>
     </div>
 
     <div class="card" id="tab1">
@@ -153,6 +157,10 @@
     <div class="card" id="tab2">
       <h2>4) Tab 2: Import or Add Wrestlers</h2>
       <img src="wmg-02-import.png" alt="Import and manual entry screenshot">
+      <p>You can import CSV files created by schools, spreadsheets, or the separate <code>wrestling-roster-builder.html</code> tool.</p>
+      <h3>Required import columns</h3>
+      <p><code>firstname,lastname,weight,agelevel,experience,school</code></p>
+      <p><strong>Optional:</strong> <code>desiredmatches</code> (if omitted, the app uses the default desired-match setting).</p>
       <h3>Importing files (single or many at once)</h3>
       <ol>
         <li>Click the file selector and choose one or more <code>.csv</code> or <code>.txt</code> files.</li>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wrestling Roster Builder</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+    }
+    .card {
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    h2 { margin: 0 0 10px; font-size: 1.2rem; }
+    .muted { color: var(--cp-text-muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    label { display: block; margin-bottom: 4px; font-size: 0.9rem; }
+    input, select, button {
+      width: 100%;
+      border: 1px solid var(--cp-border-strong);
+      border-radius: 0.625rem;
+      background: var(--cp-surface);
+      color: var(--cp-text);
+      padding: 10px;
+      font: inherit;
+    }
+    button {
+      cursor: pointer;
+      background: var(--cp-surface-soft);
+    }
+    button.primary {
+      background: var(--cp-accent);
+      border-color: var(--cp-accent);
+      color: var(--cp-accent-fg);
+    }
+    button.primary:hover { background: var(--cp-accent-hover); }
+    button.danger { color: var(--cp-danger); border-color: var(--cp-danger); }
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .status {
+      margin-top: 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 8px 10px;
+      min-height: 42px;
+      background: var(--cp-surface-soft);
+    }
+    .status.ok { border-color: var(--cp-success); color: var(--cp-success); }
+    .status.error { border-color: var(--cp-danger); color: var(--cp-danger); }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+    .toolbar > * { flex: 1 1 180px; }
+    .table-wrap {
+      margin-top: 10px;
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      overflow: auto;
+      max-height: 500px;
+      background: var(--cp-surface);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--cp-border);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--cp-surface-soft); }
+    tr.selected { background: var(--cp-accent-soft); }
+    .summary {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .pill {
+      border: 1px solid var(--cp-border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.85rem;
+      background: var(--cp-surface-soft);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Wrestling Roster Builder</h1>
+      <div class="muted">Standalone tool to build a roster CSV from manual input. No server, no sign-in, local-only data.</div>
+    </div>
+
+    <div class="card">
+      <h2>Roster Details</h2>
+      <div class="grid">
+        <div><label for="exportFileName">Export file name *</label><input id="exportFileName" type="text" placeholder="Example: varsity_duals_oct23.csv" required></div>
+        <div><label for="exportPath">Export folder path</label><input id="exportPath" type="text" placeholder="Example: C:\Users\YourName\Downloads"></div>
+        <div><label for="defaultSchool">Default school (optional)</label><input id="defaultSchool" type="text" placeholder="Example: East High"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Manual Wrestler Entry</h2>
+      <div class="grid">
+        <div><label for="firstName">First name *</label><input id="firstName" type="text"></div>
+        <div><label for="lastName">Last name *</label><input id="lastName" type="text"></div>
+        <div><label for="weight">Weight (lbs) *</label><input id="weight" type="number" min="0.1" step="0.1"></div>
+        <div><label for="grade">Age level / grade *</label><input id="grade" type="text" placeholder="K, 1, 1st...12th"></div>
+        <div>
+          <label for="experience">Experience *</label>
+          <select id="experience">
+            <option value="">Select</option>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+          </select>
+        </div>
+        <div><label for="school">School *</label><input id="school" type="text"></div>
+      </div>
+      <div class="muted" style="margin-top:8px;">
+        <strong>Experience guidance:</strong><br>
+        <strong>Beginner</strong>: New to the sport, typically year 1, with introductory skills.<br>
+        <strong>Intermediate</strong>: 1 or more years of experience with progressing skills.<br>
+        <strong>Advanced</strong>: 2 or more years of experience with advanced skills.
+      </div>
+      <div class="actions">
+        <button id="addBtn" class="primary">Add Wrestler</button>
+        <button id="updateBtn">Save Edit</button>
+        <button id="duplicateBtn">Duplicate as New</button>
+        <button id="deleteBtn" class="danger">Delete Selected</button>
+        <button id="clearBtn">Clear Form</button>
+      </div>
+      <div id="status" class="status">Enter wrestler details and click Add Wrestler.</div>
+    </div>
+
+    <div class="card">
+      <h2>Roster</h2>
+      <div class="toolbar">
+        <div><label for="search">Search name/school</label><input id="search" type="text" placeholder="Search"></div>
+        <div><label for="filterExp">Filter experience</label><select id="filterExp"><option value="">All</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select></div>
+        <div><label for="minWeight">Min weight</label><input id="minWeight" type="number" min="0" step="0.1"></div>
+        <div><label for="maxWeight">Max weight</label><input id="maxWeight" type="number" min="0" step="0.1"></div>
+        <div><label for="clearFiltersBtn">Filters</label><button id="clearFiltersBtn" type="button">Clear Filters</button></div>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>First</th>
+              <th>Last</th>
+              <th>Weight</th>
+              <th>Grade</th>
+              <th>Experience</th>
+              <th>School</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody id="rosterBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Export</h2>
+      <div class="actions">
+        <button id="downloadSample">Download Sample CSV</button>
+        <button id="exportCsv" class="primary">Download Roster CSV</button>
+        <button id="resetAll" class="danger">Clear All Data</button>
+      </div>
+      <div id="exportMessage" class="status" style="margin-top:8px;">Ready to export.</div>
+      <div class="status" id="exportPathPreview" style="margin-top:8px;">Export path preview: C:\Users\curtisricard\Downloads\wrestling-roster.csv</div>
+      <div class="muted" style="margin-top:8px;">CSV columns: firstname, lastname, weight, agelevel, experience, school</div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = "wrestlingRosterBuilderStateV1";
+      const DEFAULT_EXPORT_PATH = "C:\\Users\\curtisricard\\Downloads";
+      const state = {
+        exportFileName: "",
+        exportPath: DEFAULT_EXPORT_PATH,
+        defaultSchool: "",
+        selectedId: null,
+        rows: [],
+        filters: { search: "", exp: "", minWeight: "", maxWeight: "" }
+      };
+
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+      function id() {
+        return "w-" + Math.random().toString(36).slice(2, 9) + "-" + Date.now().toString(36);
+      }
+
+      function csvEscape(v) {
+        const s = String(v == null ? "" : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+
+      function norm(s) { return String(s || "").trim(); }
+      function canon(s) { return norm(s).toLowerCase(); }
+
+      function parseGrade(raw) {
+        const t = canon(raw).replace(/\s+/g, "");
+        if (!t) return null;
+        if (["k", "kindergarten", "kg", "0"].includes(t)) return { label: "K", norm: 0 };
+        const m = t.match(/^([1-9]|1[0-2])(st|nd|rd|th)?$/);
+        if (!m) return null;
+        return { label: String(Number(m[1])), norm: Number(m[1]) };
+      }
+
+      function parseExperience(v) {
+        const t = canon(v);
+        if (!t) return null;
+        if (t === "beginner" || t === "beg") return "Beginner";
+        if (t === "intermediate" || t === "inter" || t === "int" || t === "experienced" || t === "exp") return "Intermediate";
+        if (t === "advanced" || t === "adv") return "Advanced";
+        return null;
+      }
+
+      function msg(text, type) {
+        const el = $("#status");
+        el.className = "status";
+        if (type) el.classList.add(type);
+        el.textContent = text;
+      }
+
+      function exportMsg(text, type) {
+        const el = $("#exportMessage");
+        el.className = "status";
+        if (type) el.classList.add(type);
+        el.textContent = text;
+      }
+
+      function normalizeDownloadName(rawName) {
+        const clean = norm(rawName).replace(/[^\w.\-]+/g, "_");
+        if (!clean) return "";
+        return /\.csv$/i.test(clean) ? clean : (clean + ".csv");
+      }
+
+      function normalizeExportPath(rawPath) {
+        const base = norm(rawPath) || DEFAULT_EXPORT_PATH;
+        return base.replace(/[\\\/]+$/, "");
+      }
+
+      function buildExportFullPath() {
+        const filename = normalizeDownloadName(state.exportFileName) || "wrestling-roster.csv";
+        return normalizeExportPath(state.exportPath) + "\\" + filename;
+      }
+
+      function renderExportPathPreview() {
+        $("#exportPathPreview").textContent = "Export path preview: " + buildExportFullPath();
+      }
+
+      function formData() {
+        return {
+          firstName: $("#firstName").value,
+          lastName: $("#lastName").value,
+          weight: $("#weight").value,
+          gradeRaw: $("#grade").value,
+          experienceRaw: $("#experience").value,
+          school: $("#school").value || $("#defaultSchool").value
+        };
+      }
+
+      function validate(data) {
+        const errors = [];
+        const firstName = norm(data.firstName);
+        const lastName = norm(data.lastName);
+        const school = norm(data.school);
+        const weight = Number(data.weight);
+        const grade = parseGrade(data.gradeRaw);
+        const experience = parseExperience(data.experienceRaw);
+        if (!firstName) errors.push("Missing first name");
+        if (!lastName) errors.push("Missing last name");
+        if (!school) errors.push("Missing school");
+        if (!Number.isFinite(weight) || weight <= 0) errors.push("Invalid weight");
+        if (!grade) errors.push("Invalid grade");
+        if (!experience) errors.push("Invalid experience");
+
+        return {
+          valid: errors.length === 0,
+          errors,
+          row: { firstName, lastName, weight: Math.round(weight * 10) / 10, gradeLabel: grade ? grade.label : "", gradeNorm: grade ? grade.norm : null, experience, school }
+        };
+      }
+
+      function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function load() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          Object.assign(state, parsed);
+        } catch (_) {}
+      }
+
+      function clearForm() {
+        state.selectedId = null;
+        $("#firstName").value = "";
+        $("#lastName").value = "";
+        $("#weight").value = "";
+        $("#grade").value = "";
+        $("#experience").value = "";
+        $("#school").value = "";
+      }
+
+      function fillForm(r) {
+        $("#firstName").value = r.firstName;
+        $("#lastName").value = r.lastName;
+        $("#weight").value = r.weight;
+        $("#grade").value = r.gradeLabel;
+        $("#experience").value = r.experience;
+        $("#school").value = r.school;
+      }
+
+      function addRow() {
+        const checked = validate(formData());
+        if (!checked.valid) { msg("Could not add wrestler: " + checked.errors.join("; "), "error"); return; }
+        state.rows.push({ id: id(), ...checked.row });
+        clearForm();
+        render();
+        save();
+        msg("Wrestler added.", "ok");
+      }
+
+      function updateRow() {
+        if (!state.selectedId) { msg("Select a roster row first.", "error"); return; }
+        const idx = state.rows.findIndex(r => r.id === state.selectedId);
+        if (idx < 0) { msg("Selected row no longer exists.", "error"); return; }
+        const checked = validate(formData());
+        if (!checked.valid) { msg("Could not save edit: " + checked.errors.join("; "), "error"); return; }
+        state.rows[idx] = { ...state.rows[idx], ...checked.row };
+        render();
+        save();
+        msg("Roster row updated.", "ok");
+      }
+
+      function duplicateRow() {
+        const checked = validate(formData());
+        if (!checked.valid) { msg("Could not duplicate: " + checked.errors.join("; "), "error"); return; }
+        state.rows.push({ id: id(), ...checked.row });
+        render();
+        save();
+        msg("Duplicated as new roster row.", "ok");
+      }
+
+      function deleteRow() {
+        if (!state.selectedId) { msg("Select a roster row first.", "error"); return; }
+        state.rows = state.rows.filter(r => r.id !== state.selectedId);
+        clearForm();
+        render();
+        save();
+        msg("Roster row deleted.", "ok");
+      }
+
+      function filteredRows() {
+        return state.rows.filter(r => {
+          const q = canon(state.filters.search);
+          const hay = canon(r.firstName + " " + r.lastName + " " + r.school);
+          if (q && !hay.includes(q)) return false;
+          if (state.filters.exp && r.experience !== state.filters.exp) return false;
+          if (state.filters.minWeight !== "" && r.weight < Number(state.filters.minWeight)) return false;
+          if (state.filters.maxWeight !== "" && r.weight > Number(state.filters.maxWeight)) return false;
+          return true;
+        }).sort((a, b) => a.weight - b.weight || a.lastName.localeCompare(b.lastName));
+      }
+
+      function renderSummary(rows) {
+        const schools = new Map();
+        const exps = { Beginner: 0, Intermediate: 0, Advanced: 0 };
+        rows.forEach(r => {
+          schools.set(r.school, (schools.get(r.school) || 0) + 1);
+          exps[r.experience] = (exps[r.experience] || 0) + 1;
+        });
+        const host = $("#summary");
+        host.innerHTML = "";
+        const pills = [
+          "Visible wrestlers: " + rows.length,
+          "Total wrestlers: " + state.rows.length,
+          "Schools: " + schools.size,
+          "Beginner: " + exps.Beginner,
+          "Intermediate: " + exps.Intermediate,
+          "Advanced: " + exps.Advanced
+        ];
+        pills.forEach(t => {
+          const el = document.createElement("div");
+          el.className = "pill";
+          el.textContent = t;
+          host.appendChild(el);
+        });
+      }
+
+      function render() {
+        $("#exportFileName").value = state.exportFileName || "";
+        $("#exportPath").value = state.exportPath || DEFAULT_EXPORT_PATH;
+        $("#defaultSchool").value = state.defaultSchool || "";
+        $("#search").value = state.filters.search || "";
+        $("#filterExp").value = state.filters.exp || "";
+        $("#minWeight").value = state.filters.minWeight || "";
+        $("#maxWeight").value = state.filters.maxWeight || "";
+
+        const rows = filteredRows();
+        const body = $("#rosterBody");
+        body.innerHTML = "";
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          if (r.id === state.selectedId) tr.classList.add("selected");
+          tr.innerHTML = [
+            '<td><input type="radio" name="rowSelect" value="' + r.id + '"' + (r.id === state.selectedId ? " checked" : "") + "></td>",
+            "<td>" + csvEscape(r.firstName) + "</td>",
+            "<td>" + csvEscape(r.lastName) + "</td>",
+            "<td>" + r.weight.toFixed(1) + "</td>",
+            "<td>" + csvEscape(r.gradeLabel) + "</td>",
+            "<td>" + csvEscape(r.experience) + "</td>",
+            "<td>" + csvEscape(r.school) + "</td>",
+            "<td>" + csvEscape(r.id) + "</td>"
+          ].join("");
+          body.appendChild(tr);
+        });
+        $$('input[name="rowSelect"]').forEach(el => {
+          el.addEventListener("change", (e) => {
+            state.selectedId = e.target.value;
+            const row = state.rows.find(x => x.id === state.selectedId);
+            if (row) fillForm(row);
+            render();
+          });
+        });
+        renderSummary(rows);
+        renderExportPathPreview();
+      }
+
+      function exportCsv() {
+        if (!state.rows.length) { exportMsg("No roster rows to export.", "error"); return; }
+        const filename = normalizeDownloadName(state.exportFileName);
+        if (!filename) { exportMsg("Export file name is required.", "error"); return; }
+        const rows = [
+          ["firstname", "lastname", "weight", "agelevel", "experience", "school"],
+          ...state.rows.map(r => [r.firstName, r.lastName, r.weight.toFixed(1), r.gradeLabel, r.experience, r.school])
+        ];
+        const csv = rows.map(r => r.map(csvEscape).join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        exportMsg("Roster CSV downloaded to: " + buildExportFullPath(), "ok");
+      }
+
+      function downloadSample() {
+        const lines = [
+          "firstname,lastname,weight,agelevel,experience,school",
+          "Avery,Hale,72.5,5,Beginner,River View",
+          "Jordan,Kim,73.1,5,Intermediate,North Ridge",
+          "Riley,Ortiz,81.0,6,Advanced,Central Academy"
+        ].join("\n");
+        const blob = new Blob([lines], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "roster-builder-sample.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      }
+
+      function bind() {
+        $("#addBtn").addEventListener("click", addRow);
+        $("#updateBtn").addEventListener("click", updateRow);
+        $("#duplicateBtn").addEventListener("click", duplicateRow);
+        $("#deleteBtn").addEventListener("click", deleteRow);
+        $("#clearBtn").addEventListener("click", clearForm);
+        $("#exportCsv").addEventListener("click", exportCsv);
+        $("#downloadSample").addEventListener("click", downloadSample);
+        $("#resetAll").addEventListener("click", () => {
+          state.rows = [];
+          state.selectedId = null;
+          localStorage.removeItem(STORAGE_KEY);
+          clearForm();
+          render();
+          msg("All local roster data cleared.", "ok");
+        });
+
+        $("#exportFileName").addEventListener("input", (e) => {
+          state.exportFileName = e.target.value;
+          if (!norm(state.exportFileName)) {
+            exportMsg("Export file name is required.", "error");
+          } else {
+            exportMsg("Ready to export.", "");
+          }
+          renderExportPathPreview();
+          save();
+        });
+        $("#exportPath").addEventListener("input", (e) => { state.exportPath = e.target.value; renderExportPathPreview(); save(); });
+        $("#defaultSchool").addEventListener("input", (e) => { state.defaultSchool = e.target.value; save(); });
+        $("#search").addEventListener("input", (e) => { state.filters.search = e.target.value; render(); });
+        $("#filterExp").addEventListener("change", (e) => { state.filters.exp = e.target.value; render(); });
+        $("#minWeight").addEventListener("input", (e) => { state.filters.minWeight = e.target.value; render(); });
+        $("#maxWeight").addEventListener("input", (e) => { state.filters.maxWeight = e.target.value; render(); });
+        $("#clearFiltersBtn").addEventListener("click", () => {
+          state.filters = { search: "", exp: "", minWeight: "", maxWeight: "" };
+          render();
+        });
+      }
+
+      load();
+      bind();
+      clearForm();
+      render();
+    })();
+  </script>
+</body>
+</html>

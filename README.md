@@ -10,10 +10,12 @@ Offline HTML utility for coaches running wrestling events with one or more schoo
 - Tracks unmatched wrestlers and suggests close alternatives
 - Supports manual adjustments (create manual matchup, replace one side, lock/unlock, notes)
 - Exports final results to CSV and print/PDF
+- Supports a separate companion tool for building starter roster CSV files
 
 ## Files
 
 - `wrestling-matchup-generator.html` — main application (single-file, no install required)
+- `wrestling-roster-builder.html` — separate roster creation tool for building initial CSV files manually
 - `wrestling-matchup-generator-user-guide.html` — full instructional documentation with screenshots
 - `wmg-01-setup.png` to `wmg-06-export.png` — guide screenshots
 
@@ -29,11 +31,19 @@ Offline HTML utility for coaches running wrestling events with one or more schoo
    - Export Final Matchups page
 3. Export final outputs from tab 6 (CSV or PDF).
 
+If you need to build a roster from scratch first, open `wrestling-roster-builder.html`, enter wrestlers manually, export CSV, then import that CSV into the matchup generator.
+
 ## Data format for import
 
 Expected columns (header order can vary):
 
-`firstname,lastname,weight,agelevel,experience,school,desiredmatches`
+`firstname,lastname,weight,agelevel,experience,school`
+
+Optional column:
+
+`desiredmatches`
+
+`wrestling-roster-builder.html` exports the required base format directly and is compatible with matchup generator import.
 
 Experience values:
 - `Beginner`
